@@ -2,45 +2,43 @@ package xuan.cat.fartherviewdistance.api.event;
 
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+
 import xuan.cat.fartherviewdistance.api.data.PlayerView;
 
 public final class PlayerViewMarkWaitChunkEvent extends ExtendChunkEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
 
-    private       boolean       cancel  = false;
-    private final int           chunkX;
-    private final int           chunkZ;
+    private boolean cancel = false;
+    private final int chunkX;
+    private final int chunkZ;
 
-
-    public PlayerViewMarkWaitChunkEvent(PlayerView view, int chunkX, int chunkZ) {
+    public PlayerViewMarkWaitChunkEvent(final PlayerView view, final int chunkX, final int chunkZ) {
         super(view);
-        this.chunkX  = chunkX;
-        this.chunkZ  = chunkZ;
+        this.chunkX = chunkX;
+        this.chunkZ = chunkZ;
     }
 
-
     public int getChunkX() {
-        return chunkX;
+        return this.chunkX;
     }
 
     public int getChunkZ() {
-        return chunkZ;
+        return this.chunkZ;
     }
 
     public boolean isCancelled() {
-        return cancel;
+        return this.cancel;
     }
 
-    public void setCancelled(boolean cancel) {
+    public void setCancelled(final boolean cancel) {
         this.cancel = cancel;
     }
 
-
     public HandlerList getHandlers() {
-        return handlers;
+        return PlayerViewMarkWaitChunkEvent.handlers;
     }
 
     public static HandlerList getHandlerList() {
-        return handlers;
+        return PlayerViewMarkWaitChunkEvent.handlers;
     }
 }

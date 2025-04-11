@@ -1,41 +1,52 @@
 package xuan.cat.fartherviewdistance.code.data.viewmap;
 
-import java.util.function.Consumer;
-import xuan.cat.fartherviewdistance.code.data.viewmap.ViewShape;
-
 @SuppressWarnings("unused")
 public enum ViewShape {
-    SQUARE((aX, aZ, bX, bZ, viewDistance) -> {
+    /** square */
+    SQUARE((final int aX, final int aZ, final int bX, final int bZ, final int viewDistance) -> {
         final int minX = bX - viewDistance;
         final int minZ = bZ - viewDistance;
         final int maxX = bX + viewDistance;
         final int maxZ = bZ + viewDistance;
         return aX >= minX && aZ >= minZ && aX <= maxX && aZ <= maxZ;
-    }), ROUND((aX, aZ, bX, bZ, viewDistance) -> {
+    }),
+    /** round */
+    ROUND((final int aX, final int aZ, final int bX, final int bZ, final int viewDistance) -> {
         final int viewDiameter = viewDistance * viewDistance + viewDistance;
         final int distanceX = aX - bX;
         final int distanceZ = aZ - bZ;
         final int distance = distanceX * distanceX + distanceZ * distanceZ;
         return distance <= viewDiameter;
-    }, (aX, aZ, bX, bZ, viewDistance) -> {
-        final ViewShape.JudgeInside inside = (_aX, _aZ, _bX, _bZ, viewDiameterx) -> {
+    }, (final int aX, final int aZ, final int bX, final int bZ, final int viewDistance) -> {
+        final JudgeInside inside = (final int _aX, final int _aZ, final int _bX, final int _bZ,
+                final int viewDiameter) -> {
             final int distanceX = _aX - _bX;
             final int distanceZ = _aZ - _bZ;
             final int distance = distanceX * distanceX + distanceZ * distanceZ;
-            return distance <= viewDiameterx;
+            return distance <= viewDiameter;
         };
         final int viewDiameter = viewDistance * viewDistance + viewDistance;
-        return (inside.test(aX, aZ, bX, bZ, viewDiameter) && inside.test(aX + 1, aZ, bX, bZ, viewDiameter)
-                && inside.test(aX - 1, aZ, bX, bZ, viewDiameter) && inside.test(aX, aZ + 1, bX, bZ, viewDiameter)
-                && inside.test(aX, aZ - 1, bX, bZ, viewDiameter));
-    });
+        return inside.test(aX, aZ, bX, bZ, viewDiameter) && !(!inside.test(aX + 1, aZ, bX, bZ, viewDiameter)
+                || !inside.test(aX - 1, aZ, bX, bZ, viewDiameter) || !inside.test(aX, aZ + 1, bX, bZ, viewDiameter)
+                || !inside.test(aX, aZ - 1, bX, bZ, viewDiameter));
+    }),
+    ;
 
-    private final ViewShape.JudgeInside judgeInside;
-    private final ViewShape.JudgeInside judgeInsideEdge;
+    /**
+     * Permission calculation
+     */
+    interface JudgeInside {
+        boolean test(int aX, int aZ, int bX, int bZ, int viewDistance);
+    }
 
-    private ViewShape(final ViewShape.JudgeInside judgeInside) { this(judgeInside, judgeInside); }
+    private final JudgeInside judgeInside;
+    private final JudgeInside judgeInsideEdge;
 
-    private ViewShape(final ViewShape.JudgeInside judgeInside, final ViewShape.JudgeInside judgeInsideEdge) {
+    ViewShape(final JudgeInside judgeInside) {
+        this(judgeInside, judgeInside);
+    }
+
+    ViewShape(final JudgeInside judgeInside, final JudgeInside judgeInsideEdge) {
         this.judgeInside = judgeInside;
         this.judgeInsideEdge = judgeInsideEdge;
     }
@@ -47,9 +58,4 @@ public enum ViewShape {
     public boolean isInsideEdge(final int aX, final int aZ, final int bX, final int bZ, final int viewDistance) {
         return this.judgeInsideEdge.test(aX, aZ, bX, bZ, viewDistance);
     }
-
-    // $FF: synthetic method
-    private static ViewShape[] $values() { return new ViewShape[] { SQUARE, ROUND }; }
-
-    interface JudgeInside { boolean test(int var1, int var2, int var3, int var4, int var5); }
 }

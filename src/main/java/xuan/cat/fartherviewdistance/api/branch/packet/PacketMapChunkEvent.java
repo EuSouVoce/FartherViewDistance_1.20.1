@@ -5,26 +5,30 @@ import org.bukkit.event.HandlerList;
 
 public final class PacketMapChunkEvent extends PacketEvent {
     private static final HandlerList handlers = new HandlerList();
+
+    @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return PacketMapChunkEvent.handlers;
     }
+
     public static HandlerList getHandlerList() {
-        return handlers;
+        return PacketMapChunkEvent.handlers;
     }
 
     private final int chunkX;
     private final int chunkZ;
 
-    public PacketMapChunkEvent(Player player, int chunkX, int chunkZ) {
+    public PacketMapChunkEvent(final Player player, final int chunkX, final int chunkZ) {
         super(player);
         this.chunkX = chunkX;
         this.chunkZ = chunkZ;
     }
 
     public int getChunkX() {
-        return chunkX;
+        return this.chunkX;
     }
+
     public int getChunkZ() {
-        return chunkZ;
+        return this.chunkZ;
     }
 }

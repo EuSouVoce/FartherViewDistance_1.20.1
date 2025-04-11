@@ -5,22 +5,25 @@ import org.bukkit.event.HandlerList;
 
 public final class PacketViewDistanceEvent extends PacketEvent {
     private static final HandlerList handlers = new HandlerList();
+
+    @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return PacketViewDistanceEvent.handlers;
     }
+
     public static HandlerList getHandlerList() {
-        return handlers;
+        return PacketViewDistanceEvent.handlers;
     }
 
     private final int viewDistance;
 
-    public PacketViewDistanceEvent(Player player, int viewDistance) {
+    public PacketViewDistanceEvent(final Player player, final int viewDistance) {
         super(player);
         this.viewDistance = viewDistance;
     }
 
     public int getViewDistance() {
-        return viewDistance;
+        return this.viewDistance;
     }
 
 }

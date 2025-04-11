@@ -1,10 +1,10 @@
 package xuan.cat.fartherviewdistance.code.data.viewmap;
 
-import org.bukkit.Location;
-import org.bukkit.command.CommandSender;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import org.bukkit.Location;
+import org.bukkit.command.CommandSender;
 
 /**
  * 表示區塊視野
@@ -50,11 +50,9 @@ public final class LongX31ViewMap extends ViewMap {
     /** 視圖計算 */
     private final long[] chunkMap = new long[LENGTH];
 
-
     public LongX31ViewMap(ViewShape viewShape) {
         super(viewShape);
     }
-
 
     public List<Long> movePosition(Location location) {
         return movePosition(blockToChunk(location.getX()), blockToChunk(location.getZ()));
@@ -88,7 +86,10 @@ public final class LongX31ViewMap extends ViewMap {
                     chunkX = (centerX - pointerX) + CENTER;
                     chunkZ = (centerZ - pointerZ) + CENTER;
                     // 是否已經不再範圍內
-                    if (isSendSafe(pointerX, pointerZ) && !viewShape.isInside(centerX, centerZ, chunkX, chunkZ, hitDistance) && !viewShape.isInside(moveX, moveZ, chunkX, chunkZ, hitDistance) && markWaitSafe(pointerX, pointerZ)) {
+                    if (isSendSafe(pointerX, pointerZ)
+                            && !viewShape.isInside(centerX, centerZ, chunkX, chunkZ, hitDistance)
+                            && !viewShape.isInside(moveX, moveZ, chunkX, chunkZ, hitDistance)
+                            && markWaitSafe(pointerX, pointerZ)) {
                         removeKeys.add(getPositionKey(chunkX, chunkZ));
                     }
                 }
@@ -118,13 +119,14 @@ public final class LongX31ViewMap extends ViewMap {
             011110    011110
             011110    011110
             000000    011110
-            */
+             */
             int offsetX = centerX - moveX;
             int offsetZ = centerZ - moveZ;
             // 座標X 發生改動
             if (offsetX != 0) {
                 for (pointerZ = 0; pointerZ < LENGTH; pointerZ++) {
-                    chunkMap[pointerZ] = offsetX > 0 ? chunkMap[pointerZ] >> offsetX : chunkMap[pointerZ] << Math.abs(offsetX);
+                    chunkMap[pointerZ] = offsetX > 0 ? chunkMap[pointerZ] >> offsetX
+                            : chunkMap[pointerZ] << Math.abs(offsetX);
                 }
             }
             // 座標Z 發生改動
@@ -160,7 +162,6 @@ public final class LongX31ViewMap extends ViewMap {
             return new ArrayList<>(0);
         }
     }
-
 
     /**
      * 取得下一個應該要處裡的區塊
@@ -260,7 +261,8 @@ public final class LongX31ViewMap extends ViewMap {
                 for (stepCount = 0; stepCount < edgeStepCount; ++stepCount) {
                     chunkX = centerX - readX;
                     chunkZ = centerZ - readZ;
-                    if (!viewShape.isInsideEdge(centerX, centerZ, chunkX, chunkZ, serverDistance) && viewShape.isInside(centerX, centerZ, chunkX, chunkZ, viewDistance)) {
+                    if (!viewShape.isInsideEdge(centerX, centerZ, chunkX, chunkZ, serverDistance)
+                            && viewShape.isInside(centerX, centerZ, chunkX, chunkZ, viewDistance)) {
                         if (isWaitSafe(pointerX, pointerZ)) {
                             markSendSafe(pointerX, pointerZ);
                             return getPositionKey(chunkX, chunkZ);
@@ -276,7 +278,8 @@ public final class LongX31ViewMap extends ViewMap {
                 for (stepCount = 0; stepCount < edgeStepCount; ++stepCount) {
                     chunkX = centerX - readX;
                     chunkZ = centerZ - readZ;
-                    if (!viewShape.isInsideEdge(centerX, centerZ, chunkX, chunkZ, serverDistance) && viewShape.isInside(centerX, centerZ, chunkX, chunkZ, viewDistance)) {
+                    if (!viewShape.isInsideEdge(centerX, centerZ, chunkX, chunkZ, serverDistance)
+                            && viewShape.isInside(centerX, centerZ, chunkX, chunkZ, viewDistance)) {
                         if (isWaitSafe(pointerX, pointerZ)) {
                             markSendSafe(pointerX, pointerZ);
                             return getPositionKey(chunkX, chunkZ);
@@ -292,7 +295,8 @@ public final class LongX31ViewMap extends ViewMap {
                 for (stepCount = 0; stepCount < edgeStepCount; ++stepCount) {
                     chunkX = centerX - readX;
                     chunkZ = centerZ - readZ;
-                    if (!viewShape.isInsideEdge(centerX, centerZ, chunkX, chunkZ, serverDistance) && viewShape.isInside(centerX, centerZ, chunkX, chunkZ, viewDistance)) {
+                    if (!viewShape.isInsideEdge(centerX, centerZ, chunkX, chunkZ, serverDistance)
+                            && viewShape.isInside(centerX, centerZ, chunkX, chunkZ, viewDistance)) {
                         if (isWaitSafe(pointerX, pointerZ)) {
                             markSendSafe(pointerX, pointerZ);
                             return getPositionKey(chunkX, chunkZ);
@@ -308,7 +312,8 @@ public final class LongX31ViewMap extends ViewMap {
                 for (stepCount = 0; stepCount < edgeStepCount; ++stepCount) {
                     chunkX = centerX - readX;
                     chunkZ = centerZ - readZ;
-                    if (!viewShape.isInsideEdge(centerX, centerZ, chunkX, chunkZ, serverDistance) && viewShape.isInside(centerX, centerZ, chunkX, chunkZ, viewDistance)) {
+                    if (!viewShape.isInsideEdge(centerX, centerZ, chunkX, chunkZ, serverDistance)
+                            && viewShape.isInside(centerX, centerZ, chunkX, chunkZ, viewDistance)) {
                         if (isWaitSafe(pointerX, pointerZ)) {
                             markSendSafe(pointerX, pointerZ);
                             return getPositionKey(chunkX, chunkZ);
@@ -332,15 +337,14 @@ public final class LongX31ViewMap extends ViewMap {
         return null;
     }
 
-
     public boolean isWaitSafe(int pointerX, int pointerZ) {
         return !isSendSafe(pointerX, pointerZ);
     }
 
     public boolean isSendSafe(int pointerX, int pointerZ) {
-        return ((chunkMap[pointerZ] >> pointerX) & 0b0000000000000000000000000000000000000000000000000000000000000001L) == 0b0000000000000000000000000000000000000000000000000000000000000001L;
+        return ((chunkMap[pointerZ] >> pointerX)
+                & 0b0000000000000000000000000000000000000000000000000000000000000001L) == 0b0000000000000000000000000000000000000000000000000000000000000001L;
     }
-
 
     public boolean markWaitSafe(int pointerX, int pointerZ) {
         if (isSendSafe(pointerX, pointerZ)) {
@@ -355,13 +359,12 @@ public final class LongX31ViewMap extends ViewMap {
         chunkMap[pointerZ] |= (0b0000000000000000000000000000000000000000000000000000000000000001L << pointerX);
     }
 
-
     public boolean inPosition(int positionX, int positionZ) {
         int pointerX = CENTER + (centerX - positionX);
         int pointerZ = CENTER + (centerZ - positionZ);
-        return pointerX <= CENTER + extendDistance && pointerX >= CENTER - extendDistance && pointerZ <= CENTER + extendDistance && pointerZ >= CENTER - extendDistance;
+        return pointerX <= CENTER + extendDistance && pointerX >= CENTER - extendDistance
+                && pointerZ <= CENTER + extendDistance && pointerZ >= CENTER - extendDistance;
     }
-
 
     public boolean isWaitPosition(long positionKey) {
         int x = getX(positionKey);
@@ -373,7 +376,8 @@ public final class LongX31ViewMap extends ViewMap {
         // 上一個紀錄的區塊位置 (中心點)
         int pointerX = CENTER + (centerX - positionX);
         int pointerZ = CENTER + (centerZ - positionZ);
-        return pointerX >= 0 && pointerX < LENGTH && pointerZ >= 0 && pointerZ < LENGTH && isWaitSafe(pointerX, pointerZ);
+        return pointerX >= 0 && pointerX < LENGTH && pointerZ >= 0 && pointerZ < LENGTH
+                && isWaitSafe(pointerX, pointerZ);
     }
 
     public boolean isSendPosition(long positionKey) {
@@ -386,7 +390,8 @@ public final class LongX31ViewMap extends ViewMap {
         // 上一個紀錄的區塊位置 (中心點)
         int pointerX = CENTER + (centerX - positionX);
         int pointerZ = CENTER + (centerZ - positionZ);
-        return pointerX >= 0 && pointerX < LENGTH && pointerZ >= 0 && pointerZ < LENGTH && isSendSafe(pointerX, pointerZ);
+        return pointerX >= 0 && pointerX < LENGTH && pointerZ >= 0 && pointerZ < LENGTH
+                && isSendSafe(pointerX, pointerZ);
     }
 
     public void markWaitPosition(long positionKey) {
@@ -416,7 +421,6 @@ public final class LongX31ViewMap extends ViewMap {
         if (pointerX >= 0 && pointerX < LENGTH && pointerZ >= 0 && pointerZ < LENGTH)
             markSendSafe(pointerX, pointerZ);
     }
-
 
     /**
      * @param range 範圍外的區塊標記為等待中
@@ -460,7 +464,6 @@ public final class LongX31ViewMap extends ViewMap {
         }
     }
 
-
     /**
      * @param range 範圍內的區塊標記為等待中
      */
@@ -503,12 +506,10 @@ public final class LongX31ViewMap extends ViewMap {
         }
     }
 
-
     public void clear() {
         System.arraycopy(new long[LENGTH], 0, chunkMap, 0, chunkMap.length);
         completedDistance.set(-1);
     }
-
 
     public long[] getChunkMap() {
         return chunkMap;
@@ -540,13 +541,13 @@ public final class LongX31ViewMap extends ViewMap {
             for (pointerZ = 0; pointerZ < LENGTH; ++pointerZ) {
                 chunkX = centerX + pointerX - CENTER;
                 chunkZ = centerZ + pointerZ - CENTER;
-                if (isSendSafe(pointerX, pointerZ) && !viewShape.isInside(centerX, centerZ, chunkX, chunkZ, serverDistance))
+                if (isSendSafe(pointerX, pointerZ)
+                        && !viewShape.isInside(centerX, centerZ, chunkX, chunkZ, serverDistance))
                     chunkList.add(getPositionKey(chunkX, chunkZ));
             }
         }
         return chunkList;
     }
-
 
     public static int blockToChunk(double blockLocation) {
         return blockToChunk((int) blockLocation);
@@ -556,13 +557,12 @@ public final class LongX31ViewMap extends ViewMap {
         return blockLocation >> 4;
     }
 
-
     public static String debug(long value) {
         StringBuilder builder = new StringBuilder(LENGTH);
         for (int i = LENGTH; i >= 0; i--) {
             builder.append((value >> i & 1) == 1 ? '■' : '□');
         }
-       return builder.toString();
+        return builder.toString();
     }
 
     public void debug(CommandSender sender) {

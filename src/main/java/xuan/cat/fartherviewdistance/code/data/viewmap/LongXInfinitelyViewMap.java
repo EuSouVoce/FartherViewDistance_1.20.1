@@ -1,10 +1,10 @@
 package xuan.cat.fartherviewdistance.code.data.viewmap;
 
-import org.bukkit.Location;
-import org.bukkit.command.CommandSender;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import org.bukkit.Location;
+import org.bukkit.command.CommandSender;
 
 /**
  * 可以無限增加的視圖計算器
@@ -41,7 +41,6 @@ public final class LongXInfinitelyViewMap extends ViewMap {
     /** 最大直徑塊數 */
     private final int maxDiameter;
 
-
     public LongXInfinitelyViewMap(ViewShape viewShape, int row) {
         super(viewShape);
         rowStack = row;
@@ -50,7 +49,6 @@ public final class LongXInfinitelyViewMap extends ViewMap {
         maxDiameter = rowStack * 64 - 1;
         viewData = new long[maxDiameter << rowStackOffset];
     }
-
 
     public List<Long> movePosition(Location location) {
         return movePosition(blockToChunk(location.getX()), blockToChunk(location.getZ()));
@@ -87,7 +85,10 @@ public final class LongXInfinitelyViewMap extends ViewMap {
                     chunkX = (centerX - pointerX) + maxRadius;
                     chunkZ = (centerZ - pointerZ) + maxRadius;
                     // 是否已經不再範圍內
-                    if (isSendSafe(pointerX, pointerZ) && !viewShape.isInside(centerX, centerZ, chunkX, chunkZ, hitDistance) && !viewShape.isInside(moveX, moveZ, chunkX, chunkZ, hitDistance) && markWaitSafe(pointerX, pointerZ)) {
+                    if (isSendSafe(pointerX, pointerZ)
+                            && !viewShape.isInside(centerX, centerZ, chunkX, chunkZ, hitDistance)
+                            && !viewShape.isInside(moveX, moveZ, chunkX, chunkZ, hitDistance)
+                            && markWaitSafe(pointerX, pointerZ)) {
                         removeKeys.add(getPositionKey(chunkX, chunkZ));
                     }
                 }
@@ -132,7 +133,8 @@ public final class LongXInfinitelyViewMap extends ViewMap {
                     redressZ = pointerZ + offsetZ;
                     if (redressZ >= 0 && redressZ < maxDiameter) {
                         for (rowX = 0; rowX < rowStack; rowX++)
-                            viewData[(pointerZ << rowStackOffset) | rowX] = viewData[(redressZ << rowStackOffset) | rowX];
+                            viewData[(pointerZ << rowStackOffset) | rowX] = viewData[(redressZ << rowStackOffset)
+                                    | rowX];
                     } else {
                         for (rowX = 0; rowX < rowStack; rowX++)
                             viewData[(pointerZ << rowStackOffset) | rowX] = 0;
@@ -145,7 +147,8 @@ public final class LongXInfinitelyViewMap extends ViewMap {
                     redressZ = pointerZ + offsetZ;
                     if (redressZ >= 0 && redressZ < maxDiameter) {
                         for (rowX = 0; rowX < rowStack; rowX++)
-                            viewData[(pointerZ << rowStackOffset) | rowX] = viewData[(redressZ << rowStackOffset) | rowX];
+                            viewData[(pointerZ << rowStackOffset) | rowX] = viewData[(redressZ << rowStackOffset)
+                                    | rowX];
                     } else {
                         for (rowX = 0; rowX < rowStack; rowX++)
                             viewData[(pointerZ << rowStackOffset) | rowX] = 0;
@@ -164,7 +167,6 @@ public final class LongXInfinitelyViewMap extends ViewMap {
             return new ArrayList<>(0);
         }
     }
-
 
     /**
      * 取得下一個應該要處裡的區塊
@@ -195,7 +197,8 @@ public final class LongXInfinitelyViewMap extends ViewMap {
                 for (stepCount = 0; stepCount < edgeStepCount; ++stepCount) {
                     chunkX = centerX - readX;
                     chunkZ = centerZ - readZ;
-                    if (!viewShape.isInsideEdge(centerX, centerZ, chunkX, chunkZ, serverDistance) && viewShape.isInside(centerX, centerZ, chunkX, chunkZ, viewDistance)) {
+                    if (!viewShape.isInsideEdge(centerX, centerZ, chunkX, chunkZ, serverDistance)
+                            && viewShape.isInside(centerX, centerZ, chunkX, chunkZ, viewDistance)) {
                         if (isWaitSafe(pointerX, pointerZ)) {
                             markSendSafe(pointerX, pointerZ);
                             return getPositionKey(chunkX, chunkZ);
@@ -211,7 +214,8 @@ public final class LongXInfinitelyViewMap extends ViewMap {
                 for (stepCount = 0; stepCount < edgeStepCount; ++stepCount) {
                     chunkX = centerX - readX;
                     chunkZ = centerZ - readZ;
-                    if (!viewShape.isInsideEdge(centerX, centerZ, chunkX, chunkZ, serverDistance) && viewShape.isInside(centerX, centerZ, chunkX, chunkZ, viewDistance)) {
+                    if (!viewShape.isInsideEdge(centerX, centerZ, chunkX, chunkZ, serverDistance)
+                            && viewShape.isInside(centerX, centerZ, chunkX, chunkZ, viewDistance)) {
                         if (isWaitSafe(pointerX, pointerZ)) {
                             markSendSafe(pointerX, pointerZ);
                             return getPositionKey(chunkX, chunkZ);
@@ -227,7 +231,8 @@ public final class LongXInfinitelyViewMap extends ViewMap {
                 for (stepCount = 0; stepCount < edgeStepCount; ++stepCount) {
                     chunkX = centerX - readX;
                     chunkZ = centerZ - readZ;
-                    if (!viewShape.isInsideEdge(centerX, centerZ, chunkX, chunkZ, serverDistance) && viewShape.isInside(centerX, centerZ, chunkX, chunkZ, viewDistance)) {
+                    if (!viewShape.isInsideEdge(centerX, centerZ, chunkX, chunkZ, serverDistance)
+                            && viewShape.isInside(centerX, centerZ, chunkX, chunkZ, viewDistance)) {
                         if (isWaitSafe(pointerX, pointerZ)) {
                             markSendSafe(pointerX, pointerZ);
                             return getPositionKey(chunkX, chunkZ);
@@ -243,7 +248,8 @@ public final class LongXInfinitelyViewMap extends ViewMap {
                 for (stepCount = 0; stepCount < edgeStepCount; ++stepCount) {
                     chunkX = centerX - readX;
                     chunkZ = centerZ - readZ;
-                    if (!viewShape.isInsideEdge(centerX, centerZ, chunkX, chunkZ, serverDistance) && viewShape.isInside(centerX, centerZ, chunkX, chunkZ, viewDistance)) {
+                    if (!viewShape.isInsideEdge(centerX, centerZ, chunkX, chunkZ, serverDistance)
+                            && viewShape.isInside(centerX, centerZ, chunkX, chunkZ, viewDistance)) {
                         if (isWaitSafe(pointerX, pointerZ)) {
                             markSendSafe(pointerX, pointerZ);
                             return getPositionKey(chunkX, chunkZ);
@@ -267,7 +273,6 @@ public final class LongXInfinitelyViewMap extends ViewMap {
         return null;
     }
 
-
     private int blockToChunk(double location) {
         return blockToChunk((int) location);
     }
@@ -276,14 +281,13 @@ public final class LongXInfinitelyViewMap extends ViewMap {
         return blockLocation >> 4;
     }
 
-
     public boolean inPosition(int positionX, int positionZ) {
         int pointerX = maxRadius + (centerX - positionX);
         int pointerZ = maxRadius + (centerZ - positionZ);
         int viewDistance = Math.min(maxRadius, extendDistance);
-        return pointerX <= maxRadius + viewDistance && pointerX >= maxRadius - viewDistance && pointerZ <= maxRadius + viewDistance && pointerZ >= maxRadius - viewDistance;
+        return pointerX <= maxRadius + viewDistance && pointerX >= maxRadius - viewDistance
+                && pointerZ <= maxRadius + viewDistance && pointerZ >= maxRadius - viewDistance;
     }
-
 
     public boolean isWaitPosition(long positionKey) {
         return isWaitPosition(getX(positionKey), getZ(positionKey));
@@ -293,7 +297,8 @@ public final class LongXInfinitelyViewMap extends ViewMap {
         // 上一個紀錄的區塊位置 (中心點)
         int pointerX = maxRadius + (centerX - positionX);
         int pointerZ = maxRadius + (centerZ - positionZ);
-        return pointerX >= 0 && pointerX < maxDiameter && pointerZ >= 0 && pointerZ < maxDiameter && isWaitSafe(pointerX, pointerZ);
+        return pointerX >= 0 && pointerX < maxDiameter && pointerZ >= 0 && pointerZ < maxDiameter
+                && isWaitSafe(pointerX, pointerZ);
     }
 
     public boolean isSendPosition(long positionKey) {
@@ -304,7 +309,8 @@ public final class LongXInfinitelyViewMap extends ViewMap {
         // 上一個紀錄的區塊位置 (中心點)
         int pointerX = maxRadius + (centerX - positionX);
         int pointerZ = maxRadius + (centerZ - positionZ);
-        return pointerX >= 0 && pointerX < maxDiameter && pointerZ >= 0 && pointerZ < maxDiameter && isSendSafe(pointerX, pointerZ);
+        return pointerX >= 0 && pointerX < maxDiameter && pointerZ >= 0 && pointerZ < maxDiameter
+                && isSendSafe(pointerX, pointerZ);
     }
 
     public void markWaitPosition(long positionKey) {
@@ -331,7 +337,6 @@ public final class LongXInfinitelyViewMap extends ViewMap {
             markSendSafe(pointerX, pointerZ);
     }
 
-
     private int toViewPointer(int pointerX, int pointerZ) {
         return pointerZ << rowStackOffset | pointerX >>> 6;
     }
@@ -341,13 +346,15 @@ public final class LongXInfinitelyViewMap extends ViewMap {
     }
 
     public boolean isSendSafe(int pointerX, int pointerZ) {
-        return (viewData[toViewPointer(pointerX, pointerZ)] << (pointerX & 0b111111) & 0b1000000000000000000000000000000000000000000000000000000000000000L) == 0b1000000000000000000000000000000000000000000000000000000000000000L;
+        return (viewData[toViewPointer(pointerX, pointerZ)] << (pointerX & 0b111111)
+                & 0b1000000000000000000000000000000000000000000000000000000000000000L) == 0b1000000000000000000000000000000000000000000000000000000000000000L;
     }
-
 
     public boolean markWaitSafe(int pointerX, int pointerZ) {
         if (isSendSafe(pointerX, pointerZ)) {
-            viewData[toViewPointer(pointerX, pointerZ)] ^= (0b1000000000000000000000000000000000000000000000000000000000000000L >>> (pointerX & 0b111111));
+            viewData[toViewPointer(pointerX,
+                    pointerZ)] ^= (0b1000000000000000000000000000000000000000000000000000000000000000L >>> (pointerX
+                            & 0b111111));
             return true;
         } else {
             return false;
@@ -355,9 +362,10 @@ public final class LongXInfinitelyViewMap extends ViewMap {
     }
 
     public void markSendSafe(int pointerX, int pointerZ) {
-        viewData[toViewPointer(pointerX, pointerZ)] |= (0b1000000000000000000000000000000000000000000000000000000000000000L >>> (pointerX & 0b111111));
+        viewData[toViewPointer(pointerX,
+                pointerZ)] |= (0b1000000000000000000000000000000000000000000000000000000000000000L >>> (pointerX
+                        & 0b111111));
     }
-
 
     /**
      * @param range 範圍外的區塊標記為等待中
@@ -401,7 +409,6 @@ public final class LongXInfinitelyViewMap extends ViewMap {
         }
     }
 
-
     /**
      * @param range 範圍內的區塊標記為等待中
      */
@@ -444,7 +451,6 @@ public final class LongXInfinitelyViewMap extends ViewMap {
         }
     }
 
-
     public List<Long> getAll() {
         List<Long> chunkList = new ArrayList<>();
         int pointerX;
@@ -471,19 +477,18 @@ public final class LongXInfinitelyViewMap extends ViewMap {
             for (pointerZ = 0; pointerZ < maxDiameter; ++pointerZ) {
                 chunkX = centerX + pointerX - maxRadius;
                 chunkZ = centerZ + pointerZ - maxRadius;
-                if (isSendSafe(pointerX, pointerZ) && !viewShape.isInside(centerX, centerZ, chunkX, chunkZ, serverDistance))
+                if (isSendSafe(pointerX, pointerZ)
+                        && !viewShape.isInside(centerX, centerZ, chunkX, chunkZ, serverDistance))
                     chunkList.add(getPositionKey(chunkX, chunkZ));
             }
         }
         return chunkList;
     }
 
-
     public void clear() {
         System.arraycopy(new long[viewData.length], 0, viewData, 0, viewData.length);
         completedDistance.set(-1);
     }
-
 
     public void debug(CommandSender sender) {
         StringBuilder builder = new StringBuilder();

@@ -9,19 +9,22 @@ public abstract class PacketEvent extends Event implements Cancellable {
     private final Player player;
     private boolean cancel = false;
 
-    public PacketEvent(Player player) {
+    public PacketEvent(final Player player) {
         super(!Bukkit.isPrimaryThread());
         this.player = player;
     }
 
+    @Override
     public final boolean isCancelled() {
-        return cancel;
+        return this.cancel;
     }
-    public final void setCancelled(boolean cancel) {
+
+    @Override
+    public final void setCancelled(final boolean cancel) {
         this.cancel = cancel;
     }
 
     public final Player getPlayer() {
-        return player;
+        return this.player;
     }
 }

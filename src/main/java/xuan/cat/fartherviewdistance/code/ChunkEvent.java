@@ -3,9 +3,14 @@ package xuan.cat.fartherviewdistance.code;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.*;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.world.WorldInitEvent;
 import org.bukkit.event.world.WorldUnloadEvent;
+
 import xuan.cat.fartherviewdistance.api.branch.BranchMinecraft;
 import xuan.cat.fartherviewdistance.api.branch.BranchPacket;
 import xuan.cat.fartherviewdistance.api.branch.packet.PacketKeepAliveEvent;
@@ -16,24 +21,22 @@ import xuan.cat.fartherviewdistance.code.data.PlayerChunkView;
 
 @SuppressWarnings("unused")
 public final class ChunkEvent implements Listener {
-
     private final ChunkServer chunkServer;
     private final BranchPacket branchPacket;
     private final BranchMinecraft branchMinecraft;
 
-    public ChunkEvent(final ChunkServer chunkServer, final BranchPacket branchPacket, final BranchMinecraft branchMinecraft) {
+    public ChunkEvent(final ChunkServer chunkServer, final BranchPacket branchPacket,
+            final BranchMinecraft branchMinecraft) {
         this.chunkServer = chunkServer;
         this.branchPacket = branchPacket;
         this.branchMinecraft = branchMinecraft;
     }
 
+    /**
+     * @param event Player join
+     */
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void event(final PlayerJoinEvent event) {
-        // The line `branchMinecraft.injectPlayer(event.getPlayer());` is injecting code
-        // into the player object. This code is used to handle events related to the
-        // player, such as when they move or teleport. By injecting this code, the
-        // plugin is able to track the player's actions and perform certain actions
-        // accordingly.
         this.branchMinecraft.injectPlayer(event.getPlayer());
     }
 
@@ -42,17 +45,19 @@ public final class ChunkEvent implements Listener {
      * teleport.
      *
      * @param event The "event" parameter is of type PlayerTeleportEvent. It
-     *                  represents the event that occurred when a player teleports.
+     *              represents the event that occurred when a player teleports.
      */
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
-    public void event(final PlayerTeleportEvent event) { this.chunkServer.unloadView(event.getPlayer(), event.getFrom(), event.getTo()); }
+    public void event(final PlayerTeleportEvent event) {
+        this.chunkServer.unloadView(event.getPlayer(), event.getFrom(), event.getTo());
+    }
 
     /**
      * The function unloads the view of a player from a chunk server when the player
      * moves.
      *
      * @param event The "event" parameter is of type PlayerMoveEvent. It represents
-     *                  the event that occurred when a player moves.
+     *              the event that occurred when a player moves.
      */
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void event(final PlayerMoveEvent event) {
@@ -65,64 +70,74 @@ public final class ChunkEvent implements Listener {
      * passing in the player as a parameter.
      *
      * @param event The "event" parameter is of type PlayerRespawnEvent. It
-     *                  represents the event that occurred when a player respawns in
-     *                  the game.
+     *              represents the event that occurred when a player respawns in
+     *              the game.
      */
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
-    public void event(final PlayerRespawnEvent event) { this.chunkServer.respawnView(event.getPlayer()); }
+    public void event(final PlayerRespawnEvent event) {
+        this.chunkServer.respawnView(event.getPlayer());
+    }
 
     /**
      * The function initializes the view for a player when they join the server.
      *
      * @param event The "event" parameter is the instance of the PlayerJoinEvent
-     *                  class that is passed to the method when the event occurs. It
-     *                  contains information about the player who joined the server.
+     *              class that is passed to the method when the event occurs. It
+     *              contains information about the player who joined the server.
      */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void on(final PlayerJoinEvent event) { this.chunkServer.initView(event.getPlayer()); }
+    public void on(final PlayerJoinEvent event) {
+        this.chunkServer.initView(event.getPlayer());
+    }
 
     /**
      * The function clears the view of a player from a chunk server when they quit
      * the game.
      *
      * @param event The "event" parameter is the event object that is passed to the
-     *                  method. In this case, it is a PlayerQuitEvent object, which
-     *                  represents a player quitting the server.
+     *              method. In this case, it is a PlayerQuitEvent object, which
+     *              represents a player quitting the server.
      */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void on(final PlayerQuitEvent event) { this.chunkServer.clearView(event.getPlayer()); }
+    public void on(final PlayerQuitEvent event) {
+        this.chunkServer.clearView(event.getPlayer());
+    }
 
     /**
      * The function initializes a world in a chunk server when a WorldInitEvent
      * occurs.
      *
      * @param event The "event" parameter is the instance of the WorldInitEvent
-     *                  class that is passed to the method when it is called. It
-     *                  contains information about the world that is being
-     *                  initialized.
+     *              class that is passed to the method when it is called. It
+     *              contains information about the world that is being
+     *              initialized.
      */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void on(final WorldInitEvent event) { this.chunkServer.initWorld(event.getWorld()); }
+    public void on(final WorldInitEvent event) {
+        this.chunkServer.initWorld(event.getWorld());
+    }
 
     /**
      * The function clears the world from a chunk server when a world unload event
      * occurs.
      *
      * @param event The "event" parameter is the instance of the WorldUnloadEvent
-     *                  class that is passed to the method when the event occurs. It
-     *                  contains information about the world that is being unloaded.
+     *              class that is passed to the method when the event occurs. It
+     *              contains information about the world that is being unloaded.
      */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void on(final WorldUnloadEvent event) { this.chunkServer.clearWorld(event.getWorld()); }
+    public void on(final WorldUnloadEvent event) {
+        this.chunkServer.clearWorld(event.getWorld());
+    }
 
     /**
      * The function cancels the unloading of a chunk if it is being sent to a
      * player.
      *
      * @param event The "event" parameter is an instance of the
-     *                  PacketUnloadChunkEvent class. It represents the event that
-     *                  is being handled, which occurs when a player unloads a
-     *                  chunk.
+     *              PacketUnloadChunkEvent class. It represents the event that
+     *              is being handled, which occurs when a player unloads a
+     *              chunk.
      */
     @EventHandler(priority = EventPriority.NORMAL)
     public void on(final PacketUnloadChunkEvent event) {
@@ -136,8 +151,8 @@ public final class ChunkEvent implements Listener {
      * distance does not match the requested view distance.
      *
      * @param event The "event" parameter is an instance of the
-     *                  PacketViewDistanceEvent class. It represents an event that
-     *                  is triggered when a player's view distance is changed.
+     *              PacketViewDistanceEvent class. It represents an event that
+     *              is triggered when a player's view distance is changed.
      */
     @EventHandler(priority = EventPriority.NORMAL)
     public void on(final PacketViewDistanceEvent event) {
@@ -152,11 +167,13 @@ public final class ChunkEvent implements Listener {
      * chunk server.
      *
      * @param event The "event" parameter is an instance of the PacketMapChunkEvent
-     *                  class. It represents an event that is triggered when a
-     *                  player receives a map chunk packet from the server.
+     *              class. It represents an event that is triggered when a
+     *              player receives a map chunk packet from the server.
      */
     @EventHandler(priority = EventPriority.NORMAL)
-    public void on(final PacketMapChunkEvent event) { this.chunkServer.packetEvent(event.getPlayer(), event); }
+    public void on(final PacketMapChunkEvent event) {
+        this.chunkServer.packetEvent(event.getPlayer(), event);
+    }
 
     /**
      * The function handles a PacketKeepAliveEvent by checking if the event ID
@@ -170,13 +187,14 @@ public final class ChunkEvent implements Listener {
         if (view != null) {
             synchronized (view.networkSpeed) {
                 if (view.networkSpeed.pingID != null && view.networkSpeed.pingID == id) {
-                    view.networkSpeed.lastPing = Math.max(1, (int) (System.currentTimeMillis() - view.networkSpeed.pingTimestamp));
+                    view.networkSpeed.lastPing = Math.max(1,
+                            (int) (System.currentTimeMillis() - view.networkSpeed.pingTimestamp));
                     view.networkSpeed.pingID = null;
                     event.setCancelled(true);
                 } else if (view.networkSpeed.speedID != null && view.networkSpeed.speedID == id) {
-                    view.networkSpeed.add(
-                            Math.max(1, (int) (System.currentTimeMillis() - view.networkSpeed.speedTimestamp) - view.networkSpeed.lastPing),
-                            view.networkSpeed.speedConsume);
+                    view.networkSpeed
+                            .add(Math.max(1, (int) (System.currentTimeMillis() - view.networkSpeed.speedTimestamp)
+                                    - view.networkSpeed.lastPing), view.networkSpeed.speedConsume);
                     view.networkSpeed.speedConsume = 0;
                     view.networkSpeed.speedID = null;
                     event.setCancelled(true);

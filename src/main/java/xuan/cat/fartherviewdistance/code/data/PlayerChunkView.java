@@ -1,11 +1,13 @@
 package xuan.cat.fartherviewdistance.code.data;
 
-import java.util.Map.Entry;
+import java.util.Map;
+
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.WorldBorder;
 import org.bukkit.entity.Player;
+
 import xuan.cat.fartherviewdistance.api.branch.BranchPacket;
 import xuan.cat.fartherviewdistance.api.data.PlayerView;
 import xuan.cat.fartherviewdistance.api.event.PlayerCheckViewDistanceEvent;
@@ -15,67 +17,84 @@ import xuan.cat.fartherviewdistance.api.event.PlayerSendViewDistanceEvent;
 import xuan.cat.fartherviewdistance.api.event.PlayerViewMarkSendChunkEvent;
 import xuan.cat.fartherviewdistance.api.event.PlayerViewMarkWaitChunkEvent;
 import xuan.cat.fartherviewdistance.code.ChunkServer;
-import xuan.cat.fartherviewdistance.code.data.ConfigData;
-import xuan.cat.fartherviewdistance.code.data.CumulativeReport;
-import xuan.cat.fartherviewdistance.code.data.NetworkSpeed;
-import xuan.cat.fartherviewdistance.code.data.NetworkTraffic;
 import xuan.cat.fartherviewdistance.code.data.viewmap.ViewMap;
 import xuan.cat.fartherviewdistance.code.data.viewmap.ViewShape;
 
 @SuppressWarnings("unused")
 public final class PlayerChunkView {
-
     public final PlayerView viewAPI;
-    public final NetworkTraffic networkTraffic = new NetworkTraffic();
-    public final NetworkSpeed networkSpeed = new NetworkSpeed();
-    public final CumulativeReport cumulativeReport = new CumulativeReport();
     private final Player player;
     private final BranchPacket branchPacket;
+    /** View Calculator */
     private final ViewMap mapView;
-    private final ConfigData configData;
+    /** Forced Visual Field Distance */
     public Integer forciblyMaxDistance = null;
+    /** Compulsory data transfer per second (in bytes) */
     public Integer forciblySendSecondMaxBytes = null;
-    public volatile boolean moveTooFast = false;
-    public volatile boolean waitSend = false;
-    public volatile long syncKey;
-    public boolean permissionsNeed = true;
+    /** Final View Distance */
     private int lastDistance = 0;
+    private final ConfigData configData;
+    /** Delayed timestamp */
     private long delayTime;
+    /** Unloaded */
     private boolean isUnload = false;
+    /** Player's last world */
     private World lastWorld;
+    /** Old location */
     private Location oldLocation = null;
+    /** Whether moved to ofast */
+    public volatile boolean moveTooFast = false;
+    /** Network traffic monitor */
+    public final NetworkTraffic networkTraffic = new NetworkTraffic();
+    /** Network speed */
+    public final NetworkSpeed networkSpeed = new NetworkSpeed();
+    /** Waiting to send */
+    public volatile boolean waitSend = false;
+    /** Sync key */
+    public volatile long syncKey;
+    /** Create report */
+    public final CumulativeReport cumulativeReport = new CumulativeReport();
+    /** Check permission */
     private Long permissionsCheck = null;
+    /** permission hit */
     private Integer permissionsHit = null;
+    /** Permissions needed to be checked */
+    public boolean permissionsNeed = true;
 
-    public PlayerChunkView(final Player player, final ConfigData configData, final ViewShape viewShape, final BranchPacket branchPacket) {
+    public PlayerChunkView(Player player, ConfigData configData, ViewShape viewShape, BranchPacket branchPacket) {
         this.player = player;
         this.configData = configData;
         this.branchPacket = branchPacket;
         this.mapView = configData.viewDistanceMode.createMap(viewShape);
         this.lastWorld = player.getWorld();
         this.syncKey = ChunkServer.random.nextLong();
-        this.updateDistance();
-        this.delay();
-        this.mapView.setCenter(player.getLocation());
+
+        updateDistance();
+        delay();
+
+        mapView.setCenter(player.getLocation());
+
         this.viewAPI = new PlayerView(this);
-        Bukkit.getPluginManager().callEvent(new PlayerInitViewEvent(this.viewAPI));
+        Bukkit.getPluginManager().callEvent(new PlayerInitViewEvent(viewAPI));
     }
 
     private int serverDistance() {
-        return this.configData.serverViewDistance <= -1 ? Bukkit.getViewDistance() + 1 : this.configData.serverViewDistance;
+        return configData.serverViewDistance <= -1 ? (Bukkit.getViewDistance() + 1) : configData.serverViewDistance;
     }
 
-    public void updateDistance() { this.updateDistance(false); }
+    public void updateDistance() {
+        updateDistance(false);
+    }
 
     /**
      * The function updates the distance for a map view and sends a packet to the
      * player if the distance has changed.
      *
      * @param forcibly The `forcibly` parameter is a boolean flag that indicates
-     *                     whether the distance update should be forced, regardless
-     *                     of whether the distance has changed or not. If `forcibly`
-     *                     is set to `true`, the distance update will always be
-     *                     performed. If `forcibly` is set to `false`,
+     *                 whether the distance update should be forced, regardless
+     *                 of whether the distance has changed or not. If `forcibly`
+     *                 is set to `true`, the distance update will always be
+     *                 performed. If `forcibly` is set to `false`,
      */
     private void updateDistance(final boolean forcibly) {
         int newDistance = this.max();
@@ -85,34 +104,36 @@ public final class PlayerChunkView {
                 newDistance = this.mapView.serverDistance;
             }
         }
-
-        if (forcibly || this.lastDistance != newDistance) {
-            this.mapView.markOutsideWait(newDistance);
-            final int gapDistance = this.lastDistance - newDistance;
-            this.lastDistance = newDistance;
-            this.mapView.extendDistance = newDistance;
+        if (forcibly || lastDistance != newDistance) {
+            mapView.markOutsideWait(newDistance);
+            int gapDistance = lastDistance - newDistance;
+            lastDistance = newDistance;
+            mapView.extendDistance = newDistance;
             if (gapDistance > 0) {
-                this.mapView.completedDistance.addAndGet(-gapDistance);
+                mapView.completedDistance.addAndGet(-gapDistance);
             }
-
-            final PlayerSendViewDistanceEvent event = new PlayerSendViewDistanceEvent(this.viewAPI, newDistance);
+            PlayerSendViewDistanceEvent event = new PlayerSendViewDistanceEvent(viewAPI, newDistance);
             Bukkit.getPluginManager().callEvent(event);
             if (!event.isCancelled()) {
-                this.branchPacket.sendViewDistance(this.player, event.getDistance());
+                branchPacket.sendViewDistance(player, event.getDistance());
             }
         }
     }
 
-    private double square(final double num) { return num * num; }
+    private double square(double num) {
+        return num * num;
+    }
 
-    public boolean overSpeed() { return this.overSpeed(this.player.getLocation()); }
+    public boolean overSpeed() {
+        return overSpeed(player.getLocation());
+    }
 
     /**
      * The function checks if the speed between the current location and the
      * previous location is greater than a specified threshold.
      *
      * @param location The "location" parameter represents the current location of
-     *                     an object or entity in a specific world.
+     *                 an object or entity in a specific world.
      * @return The method is returning a boolean value.
      */
     public boolean overSpeed(final Location location) {
@@ -123,17 +144,20 @@ public final class PlayerChunkView {
             double speed = 0.0D;
             if (this.oldLocation != null && this.oldLocation.getWorld() == location.getWorld()) {
                 speed = Math.sqrt(
-                        this.square(this.oldLocation.getX() - location.getX()) + this.square(this.oldLocation.getZ() - location.getZ()));
+                        square(oldLocation.getX() - location.getX()) + square(oldLocation.getZ() - location.getZ()));
             }
-
             this.oldLocation = location;
             return speed > configWorld.speedingNotSend;
         }
     }
 
-    public synchronized boolean move() { return this.move(this.player.getLocation()); }
+    public synchronized boolean move() {
+        return move(player.getLocation());
+    }
 
-    public synchronized boolean move(final Location location) { return this.move(location.getBlockX() >> 4, location.getBlockZ() >> 4); }
+    public synchronized boolean move(Location location) {
+        return move(location.getBlockX() >> 4, location.getBlockZ() >> 4);
+    }
 
     /**
      * The function moves the player to a new chunk in the game world and unloads
@@ -141,35 +165,41 @@ public final class PlayerChunkView {
      *
      * @param chunkX The X coordinate of the chunk to move to.
      * @param chunkZ The parameter `chunkZ` represents the Z-coordinate of the
-     *                   chunk.
+     *               chunk.
      * @return The method is returning a boolean value.
      */
     public synchronized boolean move(final int chunkX, final int chunkZ) {
-        if (this.isUnload) {
+        if (this.isUnload)
             return false;
-        } else if (this.player.getWorld() != this.lastWorld) {
-            this.unload();
-            return false;
-        } else {
-            for (final long chunkKey : this.mapView.movePosition(chunkX, chunkZ)) {
-                final int hitX = ViewMap.getX(chunkKey);
-                final int hitZ = ViewMap.getZ(chunkKey);
-                final PlayerSendUnloadChunkEvent event = new PlayerSendUnloadChunkEvent(this.viewAPI, hitX, hitZ);
-                Bukkit.getPluginManager().callEvent(event);
-                if (!event.isCancelled()) {
-                    this.branchPacket.sendUnloadChunk(this.player, hitX, hitZ);
-                }
-            }
 
-            return true;
+        if (player.getWorld() != lastWorld) {
+            unload();
+            return false;
         }
+
+        int hitX;
+        int hitZ;
+        PlayerSendUnloadChunkEvent event;
+        for (long chunkKey : mapView.movePosition(chunkX, chunkZ)) {
+            hitX = ViewMap.getX(chunkKey);
+            hitZ = ViewMap.getZ(chunkKey);
+            event = new PlayerSendUnloadChunkEvent(viewAPI, hitX, hitZ);
+            Bukkit.getPluginManager().callEvent(event);
+            if (!event.isCancelled())
+                branchPacket.sendUnloadChunk(player, hitX, hitZ);
+        }
+
+        return true;
+
     }
 
     public void delay() {
-        this.delay(System.currentTimeMillis() + (long) this.configData.getWorld(this.lastWorld.getName()).delayBeforeSend);
+        delay(System.currentTimeMillis() + configData.getWorld(lastWorld.getName()).delayBeforeSend);
     }
 
-    public void delay(final long delayTime) { this.delayTime = delayTime; }
+    public void delay(long delayTime) {
+        this.delayTime = delayTime;
+    }
 
     /**
      * The function returns the next chunk key if it is within the world border and
@@ -178,70 +208,71 @@ public final class PlayerChunkView {
      * @return The method `next()` returns a `Long` value.
      */
     public Long next() {
-        if (this.player.getWorld() != this.lastWorld) {
-            this.unload();
+        if (player.getWorld() != lastWorld) {
+            unload();
             return null;
-        } else if (this.isUnload) {
-            return null;
-        } else if (this.delayTime >= System.currentTimeMillis()) {
-            return null;
-        } else {
-            final Long chunkKey = this.mapView.get();
-            if (chunkKey == null) {
-                return null;
-            } else {
-                final WorldBorder worldBorder = this.lastWorld.getWorldBorder();
-                final int chunkX = ViewMap.getX(chunkKey);
-                final int chunkZ = ViewMap.getZ(chunkKey);
-                final Location borderCenter = worldBorder.getCenter();
-                final int borderSizeRadius = (int) worldBorder.getSize() / 2;
-                final int borderMinX = (borderCenter.getBlockX() - borderSizeRadius >> 4) - 1;
-                final int borderMaxX = (borderCenter.getBlockX() + borderSizeRadius >> 4) + 1;
-                final int borderMinZ = (borderCenter.getBlockZ() - borderSizeRadius >> 4) - 1;
-                final int borderMaxZ = (borderCenter.getBlockZ() + borderSizeRadius >> 4) + 1;
-                return (borderMinX <= chunkX && chunkX <= borderMaxX && borderMinZ <= chunkZ && chunkZ <= borderMaxZ) ? chunkKey : null;
-            }
         }
+
+        if (isUnload)
+            return null;
+
+        if (delayTime >= System.currentTimeMillis())
+            return null;
+
+        Long chunkKey = mapView.get();
+        if (chunkKey == null)
+            return null;
+
+        WorldBorder worldBorder = lastWorld.getWorldBorder();
+        int chunkX = ViewMap.getX(chunkKey);
+        int chunkZ = ViewMap.getZ(chunkKey);
+        Location borderCenter = worldBorder.getCenter();
+        int borderSizeRadius = (int) worldBorder.getSize() / 2;
+        int borderMinX = ((borderCenter.getBlockX() - borderSizeRadius) >> 4) - 1;
+        int borderMaxX = ((borderCenter.getBlockX() + borderSizeRadius) >> 4) + 1;
+        int borderMinZ = ((borderCenter.getBlockZ() - borderSizeRadius) >> 4) - 1;
+        int borderMaxZ = ((borderCenter.getBlockZ() + borderSizeRadius) >> 4) + 1;
+
+        return borderMinX <= chunkX && chunkX <= borderMaxX && borderMinZ <= chunkZ && chunkZ <= borderMaxZ ? chunkKey
+                : null;
     }
 
     public void unload() {
-        if (!this.isUnload) {
-            this.delay();
-            this.syncKey = ChunkServer.random.nextLong();
-            this.isUnload = true;
-            this.branchPacket.sendViewDistance(this.player, 0);
-            this.branchPacket.sendViewDistance(this.player, this.mapView.extendDistance);
-            this.mapView.clear();
+        if (!isUnload) {
+            delay();
+            syncKey = ChunkServer.random.nextLong();
+            isUnload = true;
+            branchPacket.sendViewDistance(player, 0);
+            branchPacket.sendViewDistance(player, mapView.extendDistance);
+            mapView.clear();
         }
     }
 
     public boolean install() {
-        if (this.isUnload) {
-            this.delay();
-            this.mapView.clear();
-            this.updateDistance(true);
-            this.lastWorld = this.player.getWorld();
-            this.isUnload = false;
+        if (isUnload) {
+            delay();
+            mapView.clear();
+            updateDistance(true);
+
+            lastWorld = player.getWorld();
+            isUnload = false;
             return true;
-        } else {
-            return false;
         }
+        return false;
     }
 
-    public void send(final int x, final int z) {
-        final PlayerViewMarkSendChunkEvent event = new PlayerViewMarkSendChunkEvent(this.viewAPI, x, z);
+    public void send(int x, int z) {
+        PlayerViewMarkSendChunkEvent event = new PlayerViewMarkSendChunkEvent(viewAPI, x, z);
         Bukkit.getPluginManager().callEvent(event);
-        if (!event.isCancelled()) {
-            this.mapView.markSendPosition(x, z);
-        }
+        if (!event.isCancelled())
+            mapView.markSendPosition(x, z);
     }
 
-    public void remove(final int x, final int z) {
-        final PlayerViewMarkWaitChunkEvent event = new PlayerViewMarkWaitChunkEvent(this.viewAPI, x, z);
+    public void remove(int x, int z) {
+        PlayerViewMarkWaitChunkEvent event = new PlayerViewMarkWaitChunkEvent(viewAPI, x, z);
         Bukkit.getPluginManager().callEvent(event);
-        if (!event.isCancelled()) {
-            this.mapView.markWaitPosition(x, z);
-        }
+        if (!event.isCancelled())
+            mapView.markWaitPosition(x, z);
     }
 
     /**
@@ -252,57 +283,67 @@ public final class PlayerChunkView {
      *         maximum view distance.
      */
     public int max() {
-        final ConfigData.World configWorld = this.configData.getWorld(this.lastWorld.getName());
+        ConfigData.World configWorld = configData.getWorld(lastWorld.getName());
         int viewDistance = configWorld.maxViewDistance;
-        final int clientViewDistance = this.player.getClientViewDistance();
-        final Integer forciblyViewDistance = this.forciblyMaxDistance;
-        final PlayerCheckViewDistanceEvent event = new PlayerCheckViewDistanceEvent(this.viewAPI, this.serverDistance(), clientViewDistance,
-                viewDistance);
+        int clientViewDistance = player.getClientViewDistance();
+        Integer forciblyViewDistance = forciblyMaxDistance;
+
+        PlayerCheckViewDistanceEvent event = new PlayerCheckViewDistanceEvent(viewAPI, serverDistance(),
+                clientViewDistance, viewDistance);
         Bukkit.getPluginManager().callEvent(event);
+
         if (event.getForciblyDistance() != null) {
             viewDistance = event.getForciblyDistance();
         } else if (forciblyViewDistance != null) {
             viewDistance = forciblyViewDistance;
-        } else if (this.permissionsNeed || this.configData.permissionsPeriodicMillisecondCheck != -1L && (this.permissionsCheck == null
-                || this.permissionsCheck <= System.currentTimeMillis() - this.configData.permissionsPeriodicMillisecondCheck)) {
-            this.permissionsNeed = false;
-            this.permissionsCheck = System.currentTimeMillis();
-            this.permissionsHit = null;
-
-            for (final Entry<String, Integer> permissionsNodeEntry : this.configData.permissionsNodeList) {
-                final int permissionViewDistance = permissionsNodeEntry.getValue();
+        } else if (permissionsNeed || (configData.permissionsPeriodicMillisecondCheck != -1 && (permissionsCheck == null
+                || permissionsCheck <= System.currentTimeMillis() - configData.permissionsPeriodicMillisecondCheck))) {
+            permissionsNeed = false;
+            permissionsCheck = System.currentTimeMillis();
+            permissionsHit = null;
+            // Check Permissions Node
+            for (Map.Entry<String, Integer> permissionsNodeEntry : configData.permissionsNodeList) {
+                int permissionViewDistance = permissionsNodeEntry.getValue();
                 if (permissionViewDistance <= configWorld.maxViewDistance
-                        && (this.permissionsHit == null || permissionViewDistance > this.permissionsHit)
-                        && this.player.hasPermission((String) permissionsNodeEntry.getKey())) {
-                    this.permissionsHit = permissionViewDistance;
+                        && (permissionsHit == null || permissionViewDistance > permissionsHit)
+                        && player.hasPermission(permissionsNodeEntry.getKey())) {
+                    permissionsHit = permissionViewDistance;
                 }
             }
         }
 
-        if (this.permissionsHit != null) {
-            viewDistance = this.permissionsHit;
-        }
+        if (permissionsHit != null)
+            viewDistance = permissionsHit;
 
-        if (viewDistance > clientViewDistance) {
+        if (viewDistance > clientViewDistance)
             viewDistance = clientViewDistance;
-        }
-
-        if (viewDistance < 1) {
+        if (viewDistance < 1)
             viewDistance = 1;
-        }
 
         return viewDistance;
     }
 
-    public void clear() { this.mapView.clear(); }
+    public void clear() {
+        mapView.clear();
+    }
 
-    public void recalculate() { this.mapView.markOutsideWait(this.mapView.serverDistance); }
+    public void recalculate() {
+        mapView.markOutsideWait(mapView.serverDistance);
+    }
 
-    public ViewMap getMap() { return this.mapView; }
+    public ViewMap getMap() {
+        return mapView;
+    }
 
-    public World getLastWorld() { return this.lastWorld; }
+    public World getLastWorld() {
+        return lastWorld;
+    }
 
-    public Player getPlayer() { return this.player; }
+    public Player getPlayer() {
+        return player;
+    }
 
-    public long getDelayTime() { return this.delayTime; }
+    public long getDelayTime() {
+        return delayTime;
+    }
 }

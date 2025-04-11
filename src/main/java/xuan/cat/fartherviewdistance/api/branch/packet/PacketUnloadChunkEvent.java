@@ -3,28 +3,38 @@ package xuan.cat.fartherviewdistance.api.branch.packet;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 
+import net.minecraft.world.level.ChunkPos;
+
 public final class PacketUnloadChunkEvent extends PacketEvent {
     private static final HandlerList handlers = new HandlerList();
+
+    @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return PacketUnloadChunkEvent.handlers;
     }
+
     public static HandlerList getHandlerList() {
-        return handlers;
+        return PacketUnloadChunkEvent.handlers;
     }
 
     private final int chunkX;
     private final int chunkZ;
 
-    public PacketUnloadChunkEvent(Player player, int chunkX, int chunkZ) {
+    public PacketUnloadChunkEvent(final Player player, int chunkX, int chunkZ) {
         super(player);
         this.chunkX = chunkX;
         this.chunkZ = chunkZ;
     }
 
-    public int getChunkX() {
-        return chunkX;
+    public PacketUnloadChunkEvent(final Player player, final ChunkPos chunkPos) {
+        this(player, chunkPos.x, chunkPos.z);
     }
+
+    public int getChunkX() {
+        return this.chunkX;
+    }
+
     public int getChunkZ() {
-        return chunkZ;
+        return this.chunkZ;
     }
 }
