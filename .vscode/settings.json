@@ -14,5 +14,8 @@
             "path": "C:\\JBR-21\\",
 
           },
-    ]
+    ],
+    "yaml.schemas": {
+        "https://json.schemastore.org/paper-plugin.json": "file:///c%3A/projetos/FartherViewDistance_1.20.1/src/main/resources/plugin.yml"
+    }
 }

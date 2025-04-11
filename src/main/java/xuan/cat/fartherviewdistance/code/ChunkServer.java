@@ -546,7 +546,7 @@ public final class ChunkServer {
         if (event.isCancelled())
             return;
 
-        if (configWorld.preventXray != null && !configWorld.preventXray.isEmpty()) {
+        if (configWorld.preventXray != null && configWorld.preventXray.size() > 0) {
             for (Map.Entry<BlockData, BlockData[]> conversionMap : configWorld.preventXray.entrySet())
                 chunk.replaceAllMaterial(conversionMap.getValue(), conversionMap.getKey());
         }
