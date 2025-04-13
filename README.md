@@ -20,3 +20,14 @@
 *  Uses: Java 21
 * Every version will be compiled against a paper version, if you are seeking retro-compatibility, use an older version,
 * If the server is running in an incompatible version it will disable the plugin and log this info.
+
+### If you wish to build it yourself:
+
+1. run `mvn paper-nms:init`
+2. run `mvn package`
+3. Add the resulting jar from `./target` to your plugins folder and be happy.
+
+---
+
+#### For older versions of papermc: 
+> Check the version used on `pom.xml` based of **older commit files** that you want to compile against.
