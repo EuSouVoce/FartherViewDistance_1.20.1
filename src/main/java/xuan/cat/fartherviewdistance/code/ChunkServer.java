@@ -52,6 +52,7 @@ import xuan.cat.fartherviewdistance.code.data.viewmap.ViewShape;
  */
 public final class ChunkServer {
     private final ConfigData configData;
+    @SuppressWarnings("unused")
     private final Plugin plugin;
     private boolean running = true;
     public final BranchMinecraft branchMinecraft;
@@ -86,19 +87,19 @@ public final class ChunkServer {
      * and other components.
      * Sets up scheduled tasks for synchronous and asynchronous operations.
      */
-    public ChunkServer(ConfigData configData, Plugin plugin, ViewShape viewShape, BranchMinecraft branchMinecraft,
-            BranchPacket branchPacket) {
+    public ChunkServer(final ConfigData configData, final Plugin plugin, final ViewShape viewShape, final BranchMinecraft branchMinecraft,
+            final BranchPacket branchPacket) {
         this.configData = configData;
         this.plugin = plugin;
         this.branchMinecraft = branchMinecraft;
         this.branchPacket = branchPacket;
         this.viewShape = viewShape;
 
-        BukkitScheduler scheduler = Bukkit.getScheduler();
-        bukkitTasks.add(scheduler.runTaskTimer(plugin, this::tickSync, 0, 1));
-        bukkitTasks.add(scheduler.runTaskTimerAsynchronously(plugin, this::tickAsync, 0, 1));
-        bukkitTasks.add(scheduler.runTaskTimerAsynchronously(plugin, this::tickReport, 0, 20));
-        reloadMultithreaded();
+        final BukkitScheduler scheduler = Bukkit.getScheduler();
+        this.bukkitTasks.add(scheduler.runTaskTimer(plugin, this::tickSync, 0, 1));
+        this.bukkitTasks.add(scheduler.runTaskTimerAsynchronously(plugin, this::tickAsync, 0, 1));
+        this.bukkitTasks.add(scheduler.runTaskTimerAsynchronously(plugin, this::tickReport, 0, 20));
+        this.reloadMultithreaded();
     }
 
     /**
@@ -108,9 +109,9 @@ public final class ChunkServer {
      * @param player The player for whom the view is being initialized.
      * @return The initialized PlayerChunkView.
      */
-    public PlayerChunkView initView(Player player) {
-        PlayerChunkView view = new PlayerChunkView(player, configData, viewShape, branchPacket);
-        playersViewMap.put(player, view);
+    public PlayerChunkView initView(final Player player) {
+        final PlayerChunkView view = new PlayerChunkView(player, this.configData, this.viewShape, this.branchPacket);
+        this.playersViewMap.put(player, view);
         return view;
     }
 
@@ -119,8 +120,8 @@ public final class ChunkServer {
      * 
      * @param player The player whose view is being cleared.
      */
-    public void clearView(Player player) {
-        playersViewMap.remove(player);
+    public void clearView(final Player player) {
+        this.playersViewMap.remove(player);
     }
 
     /**
@@ -129,8 +130,8 @@ public final class ChunkServer {
      * @param player The player whose view is being retrieved.
      * @return The PlayerChunkView associated with the player.
      */
-    public PlayerChunkView getView(Player player) {
-        return playersViewMap.get(player);
+    public PlayerChunkView getView(final Player player) {
+        return this.playersViewMap.get(player);
     }
 
     /**
@@ -140,40 +141,40 @@ public final class ChunkServer {
      */
     public synchronized void reloadMultithreaded() {
 
-        if (multithreadedCanRun != null)
-            multithreadedCanRun.set(false);
-        if (multithreadedService != null) {
-            multithreadedService.shutdown();
+        if (this.multithreadedCanRun != null)
+            this.multithreadedCanRun.set(false);
+        if (this.multithreadedService != null) {
+            this.multithreadedService.shutdown();
         }
-        threadsCumulativeReport.clear();
-        threadsSet.clear();
+        this.threadsCumulativeReport.clear();
+        this.threadsSet.clear();
 
-        playersViewMap.values().forEach(view -> view.waitSend = false);
+        this.playersViewMap.values().forEach(view -> view.waitSend = false);
 
         // Create new executors
-        AtomicBoolean canRun = new AtomicBoolean(true);
-        multithreadedCanRun = canRun;
-        multithreadedService = Executors.newScheduledThreadPool(configData.asyncThreadAmount + 1);
+        final AtomicBoolean canRun = new AtomicBoolean(true);
+        this.multithreadedCanRun = canRun;
+        this.multithreadedService = Executors.newScheduledThreadPool(this.configData.asyncThreadAmount + 1);
 
-        multithreadedService.schedule(() -> {
-            Thread thread = Thread.currentThread();
+        this.multithreadedService.schedule(() -> {
+            final Thread thread = Thread.currentThread();
             thread.setName("FartherViewDistance View thread");
             thread.setPriority(3);
-            threadsSet.add(thread);
-            runView(canRun);
+            this.threadsSet.add(thread);
+            this.runView(canRun);
         }, 0, TimeUnit.MILLISECONDS);
 
-        for (int index = 0; index < configData.asyncThreadAmount; index++) {
-            int threadNumber = index;
-            CumulativeReport threadCumulativeReport = new CumulativeReport();
-            threadsCumulativeReport.put(index, threadCumulativeReport);
+        for (int index = 0; index < this.configData.asyncThreadAmount; index++) {
+            final int threadNumber = index;
+            final CumulativeReport threadCumulativeReport = new CumulativeReport();
+            this.threadsCumulativeReport.put(index, threadCumulativeReport);
             // Each thread responds every 50 milliseconds
-            multithreadedService.schedule(() -> {
-                Thread thread = Thread.currentThread();
+            this.multithreadedService.schedule(() -> {
+                final Thread thread = Thread.currentThread();
                 thread.setName("FartherViewDistance AsyncTick thread #" + threadNumber);
                 thread.setPriority(2);
-                threadsSet.add(thread);
-                runThread(canRun, threadCumulativeReport);
+                this.threadsSet.add(thread);
+                this.runThread(canRun, threadCumulativeReport);
             }, 0, TimeUnit.MILLISECONDS);
         }
     }
@@ -183,10 +184,10 @@ public final class ChunkServer {
      * 
      * @param world The world to initialize.
      */
-    public void initWorld(World world) {
-        worldsNetworkTraffic.put(world, new NetworkTraffic());
-        worldsCumulativeReport.put(world, new CumulativeReport());
-        worldsGeneratedChunk.put(world, new AtomicInteger(0));
+    public void initWorld(final World world) {
+        this.worldsNetworkTraffic.put(world, new NetworkTraffic());
+        this.worldsCumulativeReport.put(world, new CumulativeReport());
+        this.worldsGeneratedChunk.put(world, new AtomicInteger(0));
     }
 
     /**
@@ -194,10 +195,10 @@ public final class ChunkServer {
      * 
      * @param world The world whose data is being cleared.
      */
-    public void clearWorld(World world) {
-        worldsNetworkTraffic.remove(world);
-        worldsCumulativeReport.remove(world);
-        worldsGeneratedChunk.remove(world);
+    public void clearWorld(final World world) {
+        this.worldsNetworkTraffic.remove(world);
+        this.worldsCumulativeReport.remove(world);
+        this.worldsGeneratedChunk.remove(world);
     }
 
     /**
@@ -205,13 +206,13 @@ public final class ChunkServer {
      * runnables.
      */
     private void tickSync() {
-        List<World> worldList = Bukkit.getWorlds();
+        final List<World> worldList = Bukkit.getWorlds();
         Collections.shuffle(worldList);
-        lastWorldList = worldList;
-        waitMoveSyncQueue.removeIf(runnable -> {
+        this.lastWorldList = worldList;
+        this.waitMoveSyncQueue.removeIf(runnable -> {
             try {
                 runnable.run();
-            } catch (Exception exception) {
+            } catch (final Exception exception) {
                 exception.printStackTrace();
             }
             return true;
@@ -224,24 +225,24 @@ public final class ChunkServer {
      */
     private void tickAsync() {
         // reset all network traffic to zero
-        serverNetworkTraffic.next();
-        worldsNetworkTraffic.values().forEach(NetworkTraffic::next);
-        playersViewMap.values().forEach(view -> {
+        this.serverNetworkTraffic.next();
+        this.worldsNetworkTraffic.values().forEach(NetworkTraffic::next);
+        this.playersViewMap.values().forEach(view -> {
             view.networkTraffic.next();
             view.networkSpeed.next();
         });
-        serverGeneratedChunk.set(0);
-        worldsGeneratedChunk.values().forEach(generatedChunk -> generatedChunk.set(0));
+        this.serverGeneratedChunk.set(0);
+        this.worldsGeneratedChunk.values().forEach(generatedChunk -> generatedChunk.set(0));
     }
 
     /**
      * Updates cumulative reports for the server, worlds, and players.
      */
     private void tickReport() {
-        serverCumulativeReport.next();
-        worldsCumulativeReport.values().forEach(CumulativeReport::next);
-        playersViewMap.values().forEach(view -> view.cumulativeReport.next());
-        threadsCumulativeReport.values().forEach(CumulativeReport::next);
+        this.serverCumulativeReport.next();
+        this.worldsCumulativeReport.values().forEach(CumulativeReport::next);
+        this.playersViewMap.values().forEach(view -> view.cumulativeReport.next());
+        this.threadsCumulativeReport.values().forEach(CumulativeReport::next);
     }
 
     /**
@@ -251,31 +252,31 @@ public final class ChunkServer {
      * @param canRun AtomicBoolean controlling whether the loop should continue
      *               running.
      */
-    private void runView(AtomicBoolean canRun) {
+    private void runView(final AtomicBoolean canRun) {
         // Main loop
         while (canRun.get()) {
             // Start time
-            long startTime = System.currentTimeMillis();
+            final long startTime = System.currentTimeMillis();
 
             try {
                 // The view of each player
-                playersViewMap.forEach((player, view) -> {
+                this.playersViewMap.forEach((player, view) -> {
                     if (!view.install())
                         view.updateDistance();
                     view.moveTooFast = view.overSpeed();
                 });
-            } catch (Exception exception) {
+            } catch (final Exception exception) {
                 exception.printStackTrace();
             }
 
             // End time
-            long endTime = System.currentTimeMillis();
+            final long endTime = System.currentTimeMillis();
             // Maximum time consumption 50 ms
-            long needSleep = 50 - (endTime - startTime);
+            final long needSleep = 50 - (endTime - startTime);
             if (needSleep > 0) {
                 try {
                     Thread.sleep(needSleep);
-                } catch (InterruptedException ignored) {
+                } catch (final InterruptedException ignored) {
                 }
             }
         }
@@ -289,61 +290,61 @@ public final class ChunkServer {
      * @param threadCumulativeReport Cumulative report for tracking thread-specific
      *                               metrics.
      */
-    private void runThread(AtomicBoolean canRun, CumulativeReport threadCumulativeReport) {
+    private void runThread(final AtomicBoolean canRun, final CumulativeReport threadCumulativeReport) {
         while (canRun.get()) {
-            long startTime = System.currentTimeMillis();
-            long effectiveTime = startTime + 50;
+            final long startTime = System.currentTimeMillis();
+            final long effectiveTime = startTime + 50;
 
-            if (!globalPause) {
+            if (!this.globalPause) {
                 try {
-                    List<World> worldList = lastWorldList;
-                    List<PlayerChunkView> viewList = Arrays
-                            .asList(playersViewMap.values().toArray(new PlayerChunkView[0]));
+                    final List<World> worldList = this.lastWorldList;
+                    final List<PlayerChunkView> viewList = Arrays
+                            .asList(this.playersViewMap.values().toArray(new PlayerChunkView[0]));
                     Collections.shuffle(viewList);
-                    for (PlayerChunkView view : viewList) {
+                    for (final PlayerChunkView view : viewList) {
                         view.move();
                     }
-                    Map<World, List<PlayerChunkView>> worldsViews = new HashMap<>();
-                    for (PlayerChunkView view : viewList) {
+                    final Map<World, List<PlayerChunkView>> worldsViews = new HashMap<>();
+                    for (final PlayerChunkView view : viewList) {
                         worldsViews.computeIfAbsent(view.getLastWorld(), key -> new ArrayList<>()).add(view);
                     }
 
                     handleServer: {
-                        for (World world : worldList) {
-                            ConfigData.World configWorld = configData.getWorld(world.getName());
+                        for (final World world : worldList) {
+                            final ConfigData.World configWorld = this.configData.getWorld(world.getName());
                             if (!configWorld.enable)
                                 continue;
-                            CumulativeReport worldCumulativeReport = worldsCumulativeReport.get(world);
+                            final CumulativeReport worldCumulativeReport = this.worldsCumulativeReport.get(world);
                             if (worldCumulativeReport == null)
                                 continue;
-                            NetworkTraffic worldNetworkTraffic = worldsNetworkTraffic.get(world);
+                            final NetworkTraffic worldNetworkTraffic = this.worldsNetworkTraffic.get(world);
                             if (worldNetworkTraffic == null)
                                 continue;
-                            if (serverNetworkTraffic.exceed(configData.getServerSendTickMaxBytes()))
+                            if (this.serverNetworkTraffic.exceed(this.configData.getServerSendTickMaxBytes()))
                                 break handleServer;
                             if (worldNetworkTraffic.exceed(configWorld.getWorldSendTickMaxBytes()))
                                 continue;
 
-                            AtomicInteger worldGeneratedChunk = worldsGeneratedChunk.getOrDefault(world,
+                            final AtomicInteger worldGeneratedChunk = this.worldsGeneratedChunk.getOrDefault(world,
                                     new AtomicInteger(Integer.MAX_VALUE));
 
                             handleWorld: {
                                 boolean playersFull = false;
                                 while (!playersFull && effectiveTime >= System.currentTimeMillis()) {
                                     playersFull = true;
-                                    for (PlayerChunkView view : worldsViews.getOrDefault(world, new ArrayList<>(0))) {
-                                        if (serverNetworkTraffic.exceed(configData.getServerSendTickMaxBytes()))
+                                    for (final PlayerChunkView view : worldsViews.getOrDefault(world, new ArrayList<>(0))) {
+                                        if (this.serverNetworkTraffic.exceed(this.configData.getServerSendTickMaxBytes()))
                                             break handleServer;
                                         if (worldNetworkTraffic.exceed(configWorld.getWorldSendTickMaxBytes()))
                                             break handleWorld;
                                         synchronized (view.networkTraffic) {
-                                            Integer forciblySendSecondMaxBytes = view.forciblySendSecondMaxBytes;
+                                            final Integer forciblySendSecondMaxBytes = view.forciblySendSecondMaxBytes;
                                             if (view.networkTraffic.exceed(forciblySendSecondMaxBytes != null
                                                     ? (int) (forciblySendSecondMaxBytes
-                                                            * configData.playerNetworkSpeedUseDegree) / 20
+                                                            * this.configData.playerNetworkSpeedUseDegree) / 20
                                                     : configWorld.getPlayerSendTickMaxBytes()))
                                                 continue;
-                                            if (configData.autoAdaptPlayerNetworkSpeed && view.networkTraffic
+                                            if (this.configData.autoAdaptPlayerNetworkSpeed && view.networkTraffic
                                                     .exceed(Math.max(1, view.networkSpeed.avg() * 50)))
                                                 continue;
                                         }
@@ -354,35 +355,35 @@ public final class ChunkServer {
                                         if (view.moveTooFast)
                                             continue;
                                         view.waitSend = true;
-                                        long syncKey = view.syncKey;
-                                        Long chunkKey = view.next();
+                                        final long syncKey = view.syncKey;
+                                        final Long chunkKey = view.next();
                                         if (chunkKey == null) {
                                             view.waitSend = false;
                                             continue;
                                         }
                                         playersFull = false;
-                                        int chunkX = ViewMap.getX(chunkKey);
-                                        int chunkZ = ViewMap.getZ(chunkKey);
+                                        final int chunkX = ViewMap.getX(chunkKey);
+                                        final int chunkZ = ViewMap.getZ(chunkKey);
 
                                         handlePlayer: {
-                                            if (!configData.disableFastProcess) {
+                                            if (!this.configData.disableFastProcess) {
                                                 // Read the latest
                                                 try {
                                                     if (configWorld.readServerLoadedChunk) {
-                                                        BranchChunk chunk = branchMinecraft
+                                                        final BranchChunk chunk = this.branchMinecraft
                                                                 .getChunkFromMemoryCache(world, chunkX, chunkZ);
                                                         if (chunk != null) {
                                                             // Read & write
-                                                            serverCumulativeReport.increaseLoadFast();
+                                                            this.serverCumulativeReport.increaseLoadFast();
                                                             worldCumulativeReport.increaseLoadFast();
                                                             view.cumulativeReport.increaseLoadFast();
                                                             threadCumulativeReport.increaseLoadFast();
-                                                            List<Runnable> asyncRunnable = new ArrayList<>();
-                                                            BranchChunkLight chunkLight = branchMinecraft
+                                                            final List<Runnable> asyncRunnable = new ArrayList<>();
+                                                            final BranchChunkLight chunkLight = this.branchMinecraft
                                                                     .fromLight(world);
-                                                            BranchNBT chunkNBT = chunk.toNBT(chunkLight, asyncRunnable);
+                                                            final BranchNBT chunkNBT = chunk.toNBT(chunkLight, asyncRunnable);
                                                             asyncRunnable.forEach(Runnable::run);
-                                                            sendChunk(world, configWorld, worldNetworkTraffic, view,
+                                                            this.sendChunk(world, configWorld, worldNetworkTraffic, view,
                                                                     chunkX, chunkZ, chunkNBT, chunkLight, syncKey,
                                                                     worldCumulativeReport, threadCumulativeReport);
                                                             break handlePlayer;
@@ -391,104 +392,104 @@ public final class ChunkServer {
                                                 } catch (NullPointerException | NoClassDefFoundError | NoSuchMethodError
                                                         | NoSuchFieldError exception) {
                                                     exception.printStackTrace();
-                                                } catch (Exception ignored) {
+                                                } catch (final Exception ignored) {
                                                 }
 
                                                 try {
-                                                    BranchNBT chunkNBT = branchMinecraft.getChunkNBTFromDisk(world,
+                                                    final BranchNBT chunkNBT = this.branchMinecraft.getChunkNBTFromDisk(world,
                                                             chunkX, chunkZ);
-                                                    if (chunkNBT != null && branchMinecraft.fromStatus(chunkNBT)
+                                                    if (chunkNBT != null && this.branchMinecraft.fromStatus(chunkNBT)
                                                             .isAbove(BranchChunk.Status.FULL)) {
-                                                        serverCumulativeReport.increaseLoadFast();
+                                                        this.serverCumulativeReport.increaseLoadFast();
                                                         worldCumulativeReport.increaseLoadFast();
                                                         view.cumulativeReport.increaseLoadFast();
                                                         threadCumulativeReport.increaseLoadFast();
-                                                        sendChunk(world, configWorld, worldNetworkTraffic, view, chunkX,
+                                                        this.sendChunk(world, configWorld, worldNetworkTraffic, view, chunkX,
                                                                 chunkZ, chunkNBT,
-                                                                branchMinecraft.fromLight(world, chunkNBT), syncKey,
+                                                                this.branchMinecraft.fromLight(world, chunkNBT), syncKey,
                                                                 worldCumulativeReport, threadCumulativeReport);
                                                         break handlePlayer;
                                                     }
                                                 } catch (NullPointerException | NoClassDefFoundError | NoSuchMethodError
                                                         | NoSuchFieldError exception) {
                                                     exception.printStackTrace();
-                                                } catch (Exception ignored) {
+                                                } catch (final Exception ignored) {
                                                 }
                                             }
 
-                                            boolean canGenerated = serverGeneratedChunk
-                                                    .get() < configData.serverTickMaxGenerateAmount
+                                            final boolean canGenerated = this.serverGeneratedChunk
+                                                    .get() < this.configData.serverTickMaxGenerateAmount
                                                     && worldGeneratedChunk
                                                             .get() < configWorld.worldTickMaxGenerateAmount;
                                             if (canGenerated) {
-                                                serverGeneratedChunk.incrementAndGet();
+                                                this.serverGeneratedChunk.incrementAndGet();
                                                 worldGeneratedChunk.incrementAndGet();
                                             }
 
                                             try {
                                                 // paper
-                                                Chunk chunk = world.getChunkAtAsync(chunkX, chunkZ, canGenerated, true)
+                                                final Chunk chunk = world.getChunkAtAsync(chunkX, chunkZ, canGenerated, true)
                                                         .get();
                                                 if (chunk != null) {
-                                                    serverCumulativeReport.increaseLoadSlow();
+                                                    this.serverCumulativeReport.increaseLoadSlow();
                                                     worldCumulativeReport.increaseLoadSlow();
                                                     view.cumulativeReport.increaseLoadSlow();
                                                     threadCumulativeReport.increaseLoadSlow();
                                                     try {
-                                                        List<Runnable> asyncRunnable = new ArrayList<>();
-                                                        BranchChunkLight chunkLight = branchMinecraft.fromLight(world);
-                                                        BranchNBT chunkNBT = branchMinecraft.fromChunk(world, chunk)
+                                                        final List<Runnable> asyncRunnable = new ArrayList<>();
+                                                        final BranchChunkLight chunkLight = this.branchMinecraft.fromLight(world);
+                                                        final BranchNBT chunkNBT = this.branchMinecraft.fromChunk(world, chunk)
                                                                 .toNBT(chunkLight, asyncRunnable);
                                                         asyncRunnable.forEach(Runnable::run);
-                                                        sendChunk(world, configWorld, worldNetworkTraffic, view, chunkX,
+                                                        this.sendChunk(world, configWorld, worldNetworkTraffic, view, chunkX,
                                                                 chunkZ, chunkNBT, chunkLight, syncKey,
                                                                 worldCumulativeReport, threadCumulativeReport);
                                                         break handlePlayer;
                                                     } catch (NullPointerException | NoClassDefFoundError
                                                             | NoSuchMethodError | NoSuchFieldError exception) {
                                                         exception.printStackTrace();
-                                                    } catch (Exception ignored) {
+                                                    } catch (final Exception ignored) {
                                                     }
-                                                } else if (configData.serverTickMaxGenerateAmount > 0
+                                                } else if (this.configData.serverTickMaxGenerateAmount > 0
                                                         && configWorld.worldTickMaxGenerateAmount > 0) {
                                                     view.remove(chunkX, chunkZ);
                                                     break handlePlayer;
                                                 }
-                                            } catch (ExecutionException ignored) {
+                                            } catch (final ExecutionException ignored) {
                                                 view.remove(chunkX, chunkZ);
                                                 break handlePlayer;
-                                            } catch (NoSuchMethodError methodError) {
+                                            } catch (final NoSuchMethodError methodError) {
                                                 // spigot (不推薦)
                                                 if (canGenerated) {
-                                                    serverCumulativeReport.increaseLoadSlow();
+                                                    this.serverCumulativeReport.increaseLoadSlow();
                                                     worldCumulativeReport.increaseLoadSlow();
                                                     view.cumulativeReport.increaseLoadSlow();
                                                     threadCumulativeReport.increaseLoadSlow();
                                                     try {
-                                                        List<Runnable> asyncRunnable = new ArrayList<>();
-                                                        BranchChunkLight chunkLight = branchMinecraft.fromLight(world);
-                                                        CompletableFuture<BranchNBT> syncNBT = new CompletableFuture<>();
-                                                        waitMoveSyncQueue
+                                                        final List<Runnable> asyncRunnable = new ArrayList<>();
+                                                        final BranchChunkLight chunkLight = this.branchMinecraft.fromLight(world);
+                                                        final CompletableFuture<BranchNBT> syncNBT = new CompletableFuture<>();
+                                                        this.waitMoveSyncQueue
                                                                 .add(() -> syncNBT
-                                                                        .complete(branchMinecraft
+                                                                        .complete(this.branchMinecraft
                                                                                 .fromChunk(world,
                                                                                         world.getChunkAt(chunkX,
                                                                                                 chunkZ))
                                                                                 .toNBT(chunkLight, asyncRunnable)));
-                                                        BranchNBT chunkNBT = syncNBT.get();
+                                                        final BranchNBT chunkNBT = syncNBT.get();
                                                         asyncRunnable.forEach(Runnable::run);
-                                                        sendChunk(world, configWorld, worldNetworkTraffic, view, chunkX,
+                                                        this.sendChunk(world, configWorld, worldNetworkTraffic, view, chunkX,
                                                                 chunkZ, chunkNBT, chunkLight, syncKey,
                                                                 worldCumulativeReport, threadCumulativeReport);
                                                         break handlePlayer;
                                                     } catch (NullPointerException | NoClassDefFoundError
                                                             | NoSuchMethodError | NoSuchFieldError exception) {
                                                         exception.printStackTrace();
-                                                    } catch (Exception ignored) {
+                                                    } catch (final Exception ignored) {
                                                     }
                                                 }
-                                            } catch (InterruptedException ignored) {
-                                            } catch (Exception ex) {
+                                            } catch (final InterruptedException ignored) {
+                                            } catch (final Exception ex) {
                                                 ex.printStackTrace();
                                             }
                                         }
@@ -498,23 +499,23 @@ public final class ChunkServer {
 
                                     try {
                                         Thread.sleep(0L);
-                                    } catch (InterruptedException ignored) {
+                                    } catch (final InterruptedException ignored) {
                                     }
                                 }
                             }
                         }
                     }
-                } catch (Exception exception) {
+                } catch (final Exception exception) {
                     exception.printStackTrace();
                 }
             }
 
-            long endTime = System.currentTimeMillis();
-            long needSleep = 50 - (endTime - startTime);
+            final long endTime = System.currentTimeMillis();
+            final long needSleep = 50 - (endTime - startTime);
             if (needSleep > 0) {
                 try {
                     Thread.sleep(needSleep);
-                } catch (InterruptedException ignored) {
+                } catch (final InterruptedException ignored) {
                 }
             }
         }
@@ -536,71 +537,71 @@ public final class ChunkServer {
      * @param worldCumulativeReport  Cumulative report for the world.
      * @param threadCumulativeReport Cumulative report for the thread.
      */
-    private void sendChunk(World world, ConfigData.World configWorld, NetworkTraffic worldNetworkTraffic,
-            PlayerChunkView view, int chunkX, int chunkZ, BranchNBT chunkNBT, BranchChunkLight chunkLight, long syncKey,
-            CumulativeReport worldCumulativeReport, CumulativeReport threadCumulativeReport) {
-        BranchChunk chunk = branchMinecraft.fromChunk(world, chunkX, chunkZ, chunkNBT,
-                configData.calculateMissingHeightMap);
-        PlayerSendExtendChunkEvent event = new PlayerSendExtendChunkEvent(view.viewAPI, chunk, world);
+    private void sendChunk(final World world, final ConfigData.World configWorld, final NetworkTraffic worldNetworkTraffic,
+            final PlayerChunkView view, final int chunkX, final int chunkZ, final BranchNBT chunkNBT, final BranchChunkLight chunkLight, final long syncKey,
+            final CumulativeReport worldCumulativeReport, final CumulativeReport threadCumulativeReport) {
+        final BranchChunk chunk = this.branchMinecraft.fromChunk(world, chunkX, chunkZ, chunkNBT,
+                this.configData.calculateMissingHeightMap);
+        final PlayerSendExtendChunkEvent event = new PlayerSendExtendChunkEvent(view.viewAPI, chunk, world);
         Bukkit.getPluginManager().callEvent(event);
         if (event.isCancelled())
             return;
 
         if (configWorld.preventXray != null && configWorld.preventXray.size() > 0) {
-            for (Map.Entry<BlockData, BlockData[]> conversionMap : configWorld.preventXray.entrySet())
+            for (final Map.Entry<BlockData, BlockData[]> conversionMap : configWorld.preventXray.entrySet())
                 chunk.replaceAllMaterial(conversionMap.getValue(), conversionMap.getKey());
         }
 
-        AtomicInteger consumeTraffic = new AtomicInteger(0);
-        Consumer<Player> chunkAndLightPacket = branchPacket.sendChunkAndLight(view.getPlayer(), chunk, chunkLight,
+        final AtomicInteger consumeTraffic = new AtomicInteger(0);
+        final Consumer<Player> chunkAndLightPacket = this.branchPacket.sendChunkAndLight(view.getPlayer(), chunk, chunkLight,
                 configWorld.sendTitleData, consumeTraffic::addAndGet);
 
         synchronized (view.networkSpeed) {
-            Location nowLoc = view.getPlayer().getLocation();
-            int nowChunkX = nowLoc.getBlockX() >> 4;
-            int nowChunkZ = nowLoc.getBlockZ() >> 4;
-            ViewMap viewMap = view.getMap();
+            final Location nowLoc = view.getPlayer().getLocation();
+            final int nowChunkX = nowLoc.getBlockX() >> 4;
+            final int nowChunkZ = nowLoc.getBlockZ() >> 4;
+            final ViewMap viewMap = view.getMap();
             if (world != nowLoc.getWorld()) {
                 view.getMap().markWaitPosition(chunkX, chunkZ);
                 return;
             }
             if (view.getMap().isWaitPosition(chunkX, chunkZ))
                 return;
-            if (viewShape.isInsideEdge(nowChunkX, nowChunkZ, chunkX, chunkZ, viewMap.serverDistance))
+            if (this.viewShape.isInsideEdge(nowChunkX, nowChunkZ, chunkX, chunkZ, viewMap.serverDistance))
                 return;
             if (view.syncKey != syncKey)
                 return;
-            if (!running)
+            if (!this.running)
                 return;
 
-            boolean needMeasure = configData.autoAdaptPlayerNetworkSpeed && ((view.networkSpeed.speedID == null
+            final boolean needMeasure = this.configData.autoAdaptPlayerNetworkSpeed && ((view.networkSpeed.speedID == null
                     && view.networkSpeed.speedTimestamp + 1000 <= System.currentTimeMillis())
                     || view.networkSpeed.speedTimestamp + 30000 <= System.currentTimeMillis());
             if (needMeasure) {
                 if (view.networkSpeed.speedID != null) {
                     view.networkSpeed.add(30000, 0);
                 }
-                long pingID = random.nextLong();
+                final long pingID = ChunkServer.random.nextLong();
                 view.networkSpeed.pingID = pingID;
                 view.networkSpeed.pingTimestamp = System.currentTimeMillis();
-                branchPacket.sendKeepAlive(view.getPlayer(), pingID);
+                this.branchPacket.sendKeepAlive(view.getPlayer(), pingID);
             }
 
             chunkAndLightPacket.accept(view.getPlayer());
-            serverNetworkTraffic.use(consumeTraffic.get());
+            this.serverNetworkTraffic.use(consumeTraffic.get());
             worldNetworkTraffic.use(consumeTraffic.get());
             view.networkTraffic.use(consumeTraffic.get());
-            serverCumulativeReport.addConsume(consumeTraffic.get());
+            this.serverCumulativeReport.addConsume(consumeTraffic.get());
             worldCumulativeReport.addConsume(consumeTraffic.get());
             view.cumulativeReport.addConsume(consumeTraffic.get());
             threadCumulativeReport.addConsume(consumeTraffic.get());
 
             if (needMeasure) {
-                long speedID = random.nextLong();
+                final long speedID = ChunkServer.random.nextLong();
                 view.networkSpeed.speedID = speedID;
                 view.networkSpeed.speedConsume = consumeTraffic.get();
                 view.networkSpeed.speedTimestamp = System.currentTimeMillis();
-                branchPacket.sendKeepAlive(view.getPlayer(), speedID);
+                this.branchPacket.sendKeepAlive(view.getPlayer(), speedID);
             }
         }
     }
@@ -612,12 +613,11 @@ public final class ChunkServer {
      * @param player The player associated with the event.
      * @param event  The packet event being processed.
      */
-    public void packetEvent(Player player, PacketEvent event) {
-        PlayerChunkView view = getView(player);
+    public void packetEvent(final Player player, final PacketEvent event) {
+        final PlayerChunkView view = this.getView(player);
         if (view == null)
             return;
-        if (event instanceof PacketMapChunkEvent) {
-            PacketMapChunkEvent chunkEvent = (PacketMapChunkEvent) event;
+        if (event instanceof final PacketMapChunkEvent chunkEvent) {
             view.send(chunkEvent.getChunkX(), chunkEvent.getChunkZ());
         }
     }
@@ -627,12 +627,12 @@ public final class ChunkServer {
      * 
      * @param player The player whose view is being respawned.
      */
-    public void respawnView(Player player) {
-        PlayerChunkView view = getView(player);
+    public void respawnView(final Player player) {
+        final PlayerChunkView view = this.getView(player);
         if (view == null)
             return;
         view.delay();
-        waitMoveSyncQueue.add(() -> branchPacket.sendViewDistance(player, view.getMap().extendDistance));
+        this.waitMoveSyncQueue.add(() -> this.branchPacket.sendViewDistance(player, view.getMap().extendDistance));
     }
 
     /**
@@ -643,11 +643,11 @@ public final class ChunkServer {
      * @param from   The player's previous location.
      * @param move   The player's new location.
      */
-    public void unloadView(Player player, Location from, Location move) {
-        PlayerChunkView view = getView(player);
+    public void unloadView(final Player player, final Location from, final Location move) {
+        final PlayerChunkView view = this.getView(player);
         if (view == null)
             return;
-        int blockDistance = view.getMap().extendDistance << 4;
+        final int blockDistance = view.getMap().extendDistance << 4;
         if (from.getWorld() != move.getWorld())
             view.unload();
         else if (Math.abs(from.getX() - move.getX()) >= blockDistance
@@ -661,9 +661,9 @@ public final class ChunkServer {
      * multithreaded service.
      */
     void close() {
-        running = false;
-        for (BukkitTask task : bukkitTasks)
+        this.running = false;
+        for (final BukkitTask task : this.bukkitTasks)
             task.cancel();
-        multithreadedService.shutdown();
+        this.multithreadedService.shutdown();
     }
 }
