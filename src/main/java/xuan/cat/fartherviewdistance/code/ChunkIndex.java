@@ -34,13 +34,13 @@ public final class ChunkIndex extends JavaPlugin {
         // protocolManager = ProtocolLibrary.getProtocolManager();
         ChunkIndex.plugin = this;
 
-        saveDefaultConfig();
-        ChunkIndex.configData = new ConfigData(this, getConfig());
+        this.saveDefaultConfig();
+        ChunkIndex.configData = new ConfigData(this, this.getConfig());
 
         final String bukkitVersion = Bukkit.getBukkitVersion();
         final String minecraftVersion = Bukkit.getMinecraftVersion();
 
-        if (minecraftVersion.equals("1.21.4")) {
+        if (minecraftVersion.equals("1.21.5")) {
             ChunkIndex.branchPacket = new PacketCode();
             ChunkIndex.branchMinecraft = new MinecraftCode();
             ChunkIndex.chunkServer = new ChunkServer(ChunkIndex.configData, this, ViewShape.ROUND,
@@ -69,32 +69,32 @@ public final class ChunkIndex extends JavaPlugin {
         }
 
         // Cria a árvore do comando "viewdistance" com os subcomandos e argumentos
-        LiteralCommandNode<CommandSourceStack> command = Commands
+        final LiteralCommandNode<CommandSourceStack> command = Commands
                 .literal("viewdistance")
                 .requires(source -> source.getSender().hasPermission("command.viewdistance"))
 
                 // Subcomando "reload"
                 .then(Commands.literal("reload")
-                        .executes(context -> Command.reload(context)))
+                        .executes(Command::reload))
 
                 // Subcomando "report" com as opções "server", "thread", "world" e "player"
                 .then(Commands.literal("report")
                         .then(Commands.literal("server")
-                                .executes(context -> Command.reportServer(context)))
+                                .executes(Command::reportServer))
                         .then(Commands.literal("thread")
-                                .executes(context -> Command.reportThread(context)))
+                                .executes(Command::reportThread))
                         .then(Commands.literal("world")
-                                .executes(context -> Command.reportWorld(context)))
+                                .executes(Command::reportWorld))
                         .then(Commands.literal("player")
-                                .executes(context -> Command.reportPlayer(context))))
+                                .executes(Command::reportPlayer)))
 
                 // Subcomando "start"
                 .then(Commands.literal("start")
-                        .executes(context -> Command.start(context)))
+                        .executes(Command::start))
 
                 // Subcomando "stop"
                 .then(Commands.literal("stop")
-                        .executes(context -> Command.stop(context)))
+                        .executes(Command::stop))
 
                 // Subcomando "permissionCheck" com um argumento do tipo jogador
                 .then(Commands.literal("permissionCheck")
@@ -116,6 +116,7 @@ public final class ChunkIndex extends JavaPlugin {
 
     }
 
+    @Override
     public void onDisable() {
         // ChunkPlaceholder.unregisterPlaceholder();
         if (ChunkIndex.chunkServer != null)

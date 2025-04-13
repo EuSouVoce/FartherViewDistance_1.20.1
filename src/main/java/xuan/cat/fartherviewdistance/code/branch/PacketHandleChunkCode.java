@@ -7,13 +7,16 @@ import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.CraftServer;
 
 import io.netty.buffer.Unpooled;
+import io.papermc.paper.antixray.ChunkPacketInfo;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.LongArrayTag;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -41,7 +44,7 @@ public final class PacketHandleChunkCode {
                 server.getServer().registryAccess());
         bufferByteBuf.writerIndex(0);
         for (final LevelChunkSection section : chunk.getSections()) {
-            section.write(bufferByteBuf);
+            section.write((FriendlyByteBuf) bufferByteBuf, (ChunkPacketInfo<BlockState>) null, 0);
         }
 
         serializer.writeNbt(heightmapsNBT);
