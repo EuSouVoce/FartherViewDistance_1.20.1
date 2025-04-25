@@ -27,6 +27,8 @@
 2. run `mvn package`
 3. Add the resulting jar from `./target` to your plugins folder and be happy.
 
+> Why maven? My vscode isn't working properly with gradle and also I'm more used to maven.
+
 ---
 
 #### For older versions of papermc: 
