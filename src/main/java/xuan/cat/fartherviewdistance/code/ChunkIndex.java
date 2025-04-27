@@ -64,8 +64,15 @@ public final class ChunkIndex extends JavaPlugin {
                         new ChunkEvent(ChunkIndex.chunkServer, ChunkIndex.branchPacket, ChunkIndex.branchMinecraft),
                         (Plugin) this);
         // protocolManager.addPacketListener(new ChunkPacketEvent(plugin, chunkServer));
-        if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
-            ChunkPlaceholder.registerPlaceholder();
+        // Section changed on pull request #22 by Mapacheee on branch 1.21.5.
+        try {
+            if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
+                Class.forName("me.clip.placeholderapi.expansion.PlaceholderExpansion");
+                ChunkPlaceholder.registerPlaceholder();
+                this.getLogger().info("PlaceholderAPI detected. Placeholders working!");
+            }
+        } catch (NoClassDefFoundError | ClassNotFoundException e) {
+            this.getLogger().warning("PlaceholderAPI not found. Placeholders will not be available!");
         }
 
         // Cria a árvore do comando "viewdistance" com os subcomandos e argumentos
@@ -116,8 +123,11 @@ public final class ChunkIndex extends JavaPlugin {
 
     }
 
+    @Override
     public void onDisable() {
-        // ChunkPlaceholder.unregisterPlaceholder();
+        if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            ChunkPlaceholder.unregisterPlaceholder();
+        }
         if (ChunkIndex.chunkServer != null)
             ChunkIndex.chunkServer.close();
     }

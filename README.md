@@ -2,7 +2,7 @@
 
 ## author: `xuancat0208`
 
-### Contributors: [``xuancat0208``, ``EuSouVoce``, ``Lumine1909``]
+### Contributors: [``xuancat0208``, ``EuSouVoce``, ``Lumine1909``, ``Mapacheee``]
 
 ### Special thanks to `DarkChroma` admin of [CatCraft](https://catcraft.net/) for the support.
 
