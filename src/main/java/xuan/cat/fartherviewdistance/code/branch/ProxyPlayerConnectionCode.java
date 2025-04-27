@@ -27,9 +27,8 @@ public final class ProxyPlayerConnectionCode {
 
     public static boolean write(final Player player, final Packet<?> packet) {
         try {
-            if (packet instanceof final ClientboundForgetLevelChunkPacket clientboundForgetLevelChunkPacket) {
-                final PacketUnloadChunkEvent event = new PacketUnloadChunkEvent(player,
-                        clientboundForgetLevelChunkPacket.pos());
+            if (packet instanceof ClientboundForgetLevelChunkPacket(final net.minecraft.world.level.ChunkPos pos)) {
+                final PacketUnloadChunkEvent event = new PacketUnloadChunkEvent(player, pos);
                 Bukkit.getPluginManager().callEvent(event);
                 return !event.isCancelled();
             } else if (packet instanceof final ClientboundSetChunkCacheRadiusPacket clientboundSetChunkCacheRadiusPacket) {
