@@ -20,6 +20,7 @@ import xuan.cat.fartherviewdistance.code.branch.PacketCode;
 import xuan.cat.fartherviewdistance.code.command.Command;
 import xuan.cat.fartherviewdistance.code.data.ConfigData;
 import xuan.cat.fartherviewdistance.code.data.viewmap.ViewShape;
+import xuan.cat.fartherviewdistance.code.metrics.MetricsCollector;
 
 public final class ChunkIndex extends JavaPlugin {
     // private static ProtocolManager protocolManager;
@@ -34,8 +35,8 @@ public final class ChunkIndex extends JavaPlugin {
         // protocolManager = ProtocolLibrary.getProtocolManager();
         ChunkIndex.plugin = this;
 
-        saveDefaultConfig();
-        ChunkIndex.configData = new ConfigData(this, getConfig());
+        this.saveDefaultConfig();
+        ChunkIndex.configData = new ConfigData(this, this.getConfig());
 
         final String bukkitVersion = Bukkit.getBukkitVersion();
         final String minecraftVersion = Bukkit.getMinecraftVersion();
@@ -76,32 +77,32 @@ public final class ChunkIndex extends JavaPlugin {
         }
 
         // Cria a árvore do comando "viewdistance" com os subcomandos e argumentos
-        LiteralCommandNode<CommandSourceStack> command = Commands
+        final LiteralCommandNode<CommandSourceStack> command = Commands
                 .literal("viewdistance")
                 .requires(source -> source.getSender().hasPermission("command.viewdistance"))
 
                 // Subcomando "reload"
                 .then(Commands.literal("reload")
-                        .executes(context -> Command.reload(context)))
+                        .executes(Command::reload))
 
                 // Subcomando "report" com as opções "server", "thread", "world" e "player"
                 .then(Commands.literal("report")
                         .then(Commands.literal("server")
-                                .executes(context -> Command.reportServer(context)))
+                                .executes(Command::reportServer))
                         .then(Commands.literal("thread")
-                                .executes(context -> Command.reportThread(context)))
+                                .executes(Command::reportThread))
                         .then(Commands.literal("world")
-                                .executes(context -> Command.reportWorld(context)))
+                                .executes(Command::reportWorld))
                         .then(Commands.literal("player")
-                                .executes(context -> Command.reportPlayer(context))))
+                                .executes(Command::reportPlayer)))
 
                 // Subcomando "start"
                 .then(Commands.literal("start")
-                        .executes(context -> Command.start(context)))
+                        .executes(Command::start))
 
                 // Subcomando "stop"
                 .then(Commands.literal("stop")
-                        .executes(context -> Command.stop(context)))
+                        .executes(Command::stop))
 
                 // Subcomando "permissionCheck" com um argumento do tipo jogador
                 .then(Commands.literal("permissionCheck")
@@ -121,6 +122,79 @@ public final class ChunkIndex extends JavaPlugin {
             commands.registrar().register(command);
         });
 
+        // bStats
+        final int pluginId = 26238;
+        final Metrics metrics = new Metrics(this, pluginId);
+        try {
+            // Access the private 'metricsBase' field on Metrics
+            java.lang.reflect.Field baseField = metrics.getClass().getDeclaredField("metricsBase");
+            baseField.setAccessible(true);
+            Object metricsBase = baseField.get(metrics);
+            // Access the private 'enabled' field on MetricsBase subclass
+            java.lang.reflect.Field enabledField = metricsBase.getClass().getDeclaredField("enabled");
+            enabledField.setAccessible(true);
+            boolean enabled = enabledField.getBoolean(metricsBase);
+            if (enabled) {
+                // Initialize the metrics collector and set up custom charts only if metrics are
+                // enabled
+                MetricsCollector.initialize(this);
+                this.setupCustomMetrics(metrics);
+            }
+        } catch (final Exception e) {
+            /* Do nothing if it fails */
+        }
+    }
+
+    /**
+     * Set up custom metrics charts for bStats
+     * 
+     * @param metrics The bStats metrics instance
+     */
+    private void setupCustomMetrics(final Metrics metrics) {
+        // View distance metrics
+        metrics.addCustomChart(new Metrics.SingleLineChart("average_view_distance",
+                MetricsCollector::getAverageViewDistance));
+
+        // Network speed metrics
+        metrics.addCustomChart(new Metrics.SingleLineChart("average_network_speed_kbps",
+                () -> MetricsCollector.getAverageNetworkSpeed() / 1024));
+
+        // Load metrics - fast
+        metrics.addCustomChart(new Metrics.SingleLineChart("load_fast_5s",
+                MetricsCollector::getLoadFast5s));
+
+        metrics.addCustomChart(new Metrics.SingleLineChart("load_fast_1m",
+                MetricsCollector::getLoadFast1m));
+
+        metrics.addCustomChart(new Metrics.SingleLineChart("load_fast_5m",
+                MetricsCollector::getLoadFast5m));
+
+        // Load metrics - slow
+        metrics.addCustomChart(new Metrics.SingleLineChart("load_slow_5s",
+                MetricsCollector::getLoadSlow5s));
+
+        metrics.addCustomChart(new Metrics.SingleLineChart("load_slow_1m",
+                MetricsCollector::getLoadSlow1m));
+
+        metrics.addCustomChart(new Metrics.SingleLineChart("load_slow_5m",
+                MetricsCollector::getLoadSlow5m));
+
+        // Consumption metrics
+        metrics.addCustomChart(new Metrics.SingleLineChart("consumption_5s",
+                MetricsCollector::getConsume5s));
+
+        metrics.addCustomChart(new Metrics.SingleLineChart("consumption_1m",
+                MetricsCollector::getConsume1m));
+
+        metrics.addCustomChart(new Metrics.SingleLineChart("consumption_5m",
+                MetricsCollector::getConsume5m));
+
+        // Distribution charts
+        metrics.addCustomChart(new Metrics.DrilldownPie("network_speed_distribution",
+                MetricsCollector::getNetworkSpeedDistribution));
+
+        metrics.addCustomChart(new Metrics.DrilldownPie("view_distance_distribution",
+                MetricsCollector::getViewDistanceDistribution));
     }
 
     @Override
