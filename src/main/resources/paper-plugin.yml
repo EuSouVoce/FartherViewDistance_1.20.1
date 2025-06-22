@@ -2,5 +2,9 @@ name: FartherViewDistance
 version: ${project.version}
 main: xuan.cat.fartherviewdistance.code.ChunkIndex
 api-version: "1.21"
-softdepend: [PlaceholderAPI]
 authors: [xuancat0208, EuSouVoce, Lumine1909, Mapacheee]
+dependencies:
+  server:
+    PlaceholderAPI:
+      load: BEFORE
+      required: false # PlaceholderAPI is optional, so we set it to false.

@@ -44,7 +44,7 @@ public final class ChunkPlaceholder extends PlaceholderExpansion {
 
     @Override
     public String getAuthor() {
-        return "xuancat0208";
+        return "xuancat0208, maintained by EuSouVoce";
     }
 
     @Override
