@@ -20,7 +20,6 @@ import xuan.cat.fartherviewdistance.code.ChunkServer;
 import xuan.cat.fartherviewdistance.code.data.viewmap.ViewMap;
 import xuan.cat.fartherviewdistance.code.data.viewmap.ViewShape;
 
-@SuppressWarnings("unused")
 public final class PlayerChunkView {
     public final PlayerView viewAPI;
     private final Player player;
@@ -61,7 +60,8 @@ public final class PlayerChunkView {
     /** Permissions needed to be checked */
     public boolean permissionsNeed = true;
 
-    public PlayerChunkView(final Player player, final ConfigData configData, final ViewShape viewShape, final BranchPacket branchPacket) {
+    public PlayerChunkView(final Player player, final ConfigData configData, final ViewShape viewShape,
+            final BranchPacket branchPacket) {
         this.player = player;
         this.configData = configData;
         this.branchPacket = branchPacket;
@@ -79,7 +79,8 @@ public final class PlayerChunkView {
     }
 
     private int serverDistance() {
-        return this.configData.serverViewDistance <= -1 ? (Bukkit.getViewDistance() + 1) : this.configData.serverViewDistance;
+        return this.configData.serverViewDistance <= -1 ? (Bukkit.getViewDistance() + 1)
+                : this.configData.serverViewDistance;
     }
 
     public void updateDistance() {
@@ -144,7 +145,8 @@ public final class PlayerChunkView {
             double speed = 0.0D;
             if (this.oldLocation != null && this.oldLocation.getWorld() == location.getWorld()) {
                 speed = Math.sqrt(
-                        this.square(this.oldLocation.getX() - location.getX()) + this.square(this.oldLocation.getZ() - location.getZ()));
+                        this.square(this.oldLocation.getX() - location.getX())
+                                + this.square(this.oldLocation.getZ() - location.getZ()));
             }
             this.oldLocation = location;
             return speed > configWorld.speedingNotSend;
@@ -296,8 +298,10 @@ public final class PlayerChunkView {
             viewDistance = event.getForciblyDistance();
         } else if (forciblyViewDistance != null) {
             viewDistance = forciblyViewDistance;
-        } else if (this.permissionsNeed || (this.configData.permissionsPeriodicMillisecondCheck != -1 && (this.permissionsCheck == null
-                || this.permissionsCheck <= System.currentTimeMillis() - this.configData.permissionsPeriodicMillisecondCheck))) {
+        } else if (this.permissionsNeed
+                || (this.configData.permissionsPeriodicMillisecondCheck != -1 && (this.permissionsCheck == null
+                        || this.permissionsCheck <= System.currentTimeMillis()
+                                - this.configData.permissionsPeriodicMillisecondCheck))) {
             this.permissionsNeed = false;
             this.permissionsCheck = System.currentTimeMillis();
             this.permissionsHit = null;

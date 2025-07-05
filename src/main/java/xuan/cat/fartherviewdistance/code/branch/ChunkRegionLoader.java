@@ -26,6 +26,7 @@ import net.minecraft.nbt.ShortTag;
 import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ThreadedLevelLightEngine;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.Biomes;
@@ -51,6 +52,7 @@ import net.minecraft.world.level.levelgen.blending.BlendingData;
 import net.minecraft.world.level.levelgen.blending.BlendingData.Packed;
 import net.minecraft.world.level.lighting.LevelLightEngine;
 import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.ticks.LevelChunkTicks;
 import net.minecraft.world.ticks.ProtoChunkTicks;
 import net.minecraft.world.ticks.SavedTick;
@@ -61,8 +63,10 @@ import xuan.cat.fartherviewdistance.api.branch.BranchChunkLight;
  * @see SerializableChunkData
  */
 public final class ChunkRegionLoader {
-    private static final int CURRENT_DATA_VERSION = SharedConstants.getCurrentVersion().getDataVersion().getVersion();
+    private static final int CURRENT_DATA_VERSION = SharedConstants.getCurrentVersion().dataVersion().version();
     private static final boolean JUST_CORRUPT_IT = Boolean.getBoolean("Paper.ignoreWorldDataVersion");
+
+    private static final Codec<BlockEntityType<?>> TYPE_CODEC = ChunkRegionLoader.getBlockEntityTypeCodec();
 
     public static BranchChunk.Status loadStatus(final CompoundTag nbt) {
         return ChunkCode.ofStatus(ChunkStatus.byName(nbt.getString("Status").get()));
@@ -254,22 +258,41 @@ public final class ChunkRegionLoader {
     @Nullable
     public static BlockEntity loadStatic(final BlockPos pos, final BlockState state, final CompoundTag tag,
             final HolderLookup.Provider registries) {
-        final BlockEntityType<?> blockEntityType = tag.read("id", ChunkRegionLoader.getBlockEntityTypeCodec())
-                .orElse(null);
+        final BlockEntityType<?> blockEntityType = (BlockEntityType<?>) tag.read("id", ChunkRegionLoader.TYPE_CODEC)
+                .orElse((BlockEntityType<?>) null);
         if (blockEntityType == null) {
             return null;
-        }
-        BlockEntity blockEntity;
-        try {
-            blockEntity = (BlockEntity) blockEntityType.create(pos, state);
-        } catch (final Throwable var8) {
-            return null;
-        }
-        try {
-            blockEntity.loadWithComponents(tag, registries);
-            return blockEntity;
-        } catch (final Throwable var9) {
-            return null;
+        } else {
+            BlockEntity blockEntity;
+            try {
+                blockEntity = blockEntityType.create(pos, state);
+            } catch (final Throwable var13) {
+                return null;
+            }
+
+            try {
+                final ProblemReporter.ScopedCollector scopedCollector = new ProblemReporter.ScopedCollector(
+                        blockEntity.problemPath(), null);
+
+                BlockEntity var7;
+                try {
+                    blockEntity.loadWithComponents(TagValueInput.create(scopedCollector, registries, tag));
+                    var7 = blockEntity;
+                } catch (final Throwable var11) {
+                    try {
+                        scopedCollector.close();
+                    } catch (final Throwable var10) {
+                        var11.addSuppressed(var10);
+                    }
+
+                    throw var11;
+                }
+
+                scopedCollector.close();
+                return var7;
+            } catch (final Throwable var12) {
+                return null;
+            }
         }
     }
 
@@ -289,6 +312,7 @@ public final class ChunkRegionLoader {
         return new BlockPos(intOr, intOr1, intOr2);
     }
 
+    @SuppressWarnings("unchecked")
     private static Codec<BlockEntityType<?>> getBlockEntityTypeCodec() {
         Field field = null;
         try {

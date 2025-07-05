@@ -1,6 +1,5 @@
 package xuan.cat.fartherviewdistance.code.data.viewmap;
 
-@SuppressWarnings("unused")
 public enum ViewShape {
     /** square */
     SQUARE((final int aX, final int aZ, final int bX, final int bZ, final int viewDistance) -> {
