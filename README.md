@@ -8,6 +8,11 @@
 
 ---
 
+bStats
+------
+[![bStats Graph Data](https://bstats.org/signatures/bukkit/FartherViewDistance.svg)](https://bstats.org/plugin/bukkit/FartherViewDistance/26238/)
+
+
 ## ~~How-to?~~
 
 1. ~~Open each branch, compile it's corresponding pom.xml (`mvn package`)~~
