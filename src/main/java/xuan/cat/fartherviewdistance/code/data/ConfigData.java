@@ -1,5 +1,9 @@
 package xuan.cat.fartherviewdistance.code.data;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -14,6 +18,8 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import xuan.cat.fartherviewdistance.code.data.viewmap.ViewMapMode;
 
 /**
@@ -38,17 +44,20 @@ public final class ConfigData {
     public List<Map.Entry<String, Integer>> permissionsNodeList;
     public long permissionsPeriodicMillisecondCheck;
 
-    public ConfigData(final JavaPlugin plugin, final FileConfiguration fileConfiguration) {
+    private final Path configPath;
+
+    public ConfigData(@NotNull JavaPlugin plugin, @Nullable ConfigurationSection fallback) {
         this.plugin = plugin;
-        this.fileConfiguration = fileConfiguration;
-        this.load();
+        this.configPath = Path.of(plugin.getDataFolder().getAbsolutePath(), "config.yml");
+        plugin.saveDefaultConfig();
+        reload();
     }
 
     public void reload() {
-        this.plugin.reloadConfig();
-        this.fileConfiguration = this.plugin.getConfig();
-        this.load();
+        this.fileConfiguration = YamlConfiguration.loadConfiguration(configPath.toFile());
+        load();
     }
+
 
     public int getServerSendTickMaxBytes() {
         return this.serverSendSecondMaxBytes / 20;
@@ -138,7 +147,6 @@ public final class ConfigData {
         final boolean calculateMissingHeightMap = this.fileConfiguration.getBoolean("calculate-missing-height-map",
                 false);
         final boolean disableFastProcess = this.fileConfiguration.getBoolean("disable-fast-process", false);
-
         // Permissions
         final ConfigurationSection permissionsConfiguration = this.fileConfiguration
                 .getConfigurationSection("permissions");
