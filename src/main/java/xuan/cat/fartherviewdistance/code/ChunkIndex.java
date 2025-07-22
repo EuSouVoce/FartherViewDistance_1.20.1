@@ -41,7 +41,7 @@ public final class ChunkIndex extends JavaPlugin {
         final String bukkitVersion = Bukkit.getBukkitVersion();
         final String minecraftVersion = Bukkit.getMinecraftVersion();
 
-        if (minecraftVersion.equals("1.21.7")) {
+        if (minecraftVersion.equals("1.21.7") || minecraftVersion.equals("1.21.8")) {
             ChunkIndex.branchPacket = new PacketCode();
             ChunkIndex.branchMinecraft = new MinecraftCode();
             ChunkIndex.chunkServer = new ChunkServer(ChunkIndex.configData, this, ViewShape.ROUND,
