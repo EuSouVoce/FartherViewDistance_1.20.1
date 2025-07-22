@@ -22,6 +22,8 @@ import xuan.cat.fartherviewdistance.code.data.ConfigData;
 import xuan.cat.fartherviewdistance.code.data.viewmap.ViewShape;
 import xuan.cat.fartherviewdistance.code.metrics.MetricsCollector;
 
+import java.util.Set;
+
 public final class ChunkIndex extends JavaPlugin {
     // private static ProtocolManager protocolManager;
     private static Plugin plugin;
@@ -29,6 +31,7 @@ public final class ChunkIndex extends JavaPlugin {
     private static ConfigData configData;
     private static BranchPacket branchPacket;
     private static BranchMinecraft branchMinecraft;
+    private static final Set<String> SUPPORTED = Set.of("1.21.7", "1.21.8");
 
     @Override
     public void onEnable() {
@@ -41,7 +44,7 @@ public final class ChunkIndex extends JavaPlugin {
         final String bukkitVersion = Bukkit.getBukkitVersion();
         final String minecraftVersion = Bukkit.getMinecraftVersion();
 
-        if (minecraftVersion.equals("1.21.7") || minecraftVersion.equals("1.21.8")) {
+        if (SUPPORTED.contains(minecraftVersion)) {
             ChunkIndex.branchPacket = new PacketCode();
             ChunkIndex.branchMinecraft = new MinecraftCode();
             ChunkIndex.chunkServer = new ChunkServer(ChunkIndex.configData, this, ViewShape.ROUND,
