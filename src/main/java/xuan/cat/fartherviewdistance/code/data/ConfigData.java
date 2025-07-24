@@ -1,8 +1,5 @@
 package xuan.cat.fartherviewdistance.code.data;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,9 +14,9 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
 import xuan.cat.fartherviewdistance.code.data.viewmap.ViewMapMode;
 
 /**
@@ -46,18 +43,17 @@ public final class ConfigData {
 
     private final Path configPath;
 
-    public ConfigData(@NotNull JavaPlugin plugin, @Nullable ConfigurationSection fallback) {
+    public ConfigData(@NotNull final JavaPlugin plugin, @Nullable final ConfigurationSection fallback) {
         this.plugin = plugin;
         this.configPath = Path.of(plugin.getDataFolder().getAbsolutePath(), "config.yml");
         plugin.saveDefaultConfig();
-        reload();
+        this.reload();
     }
 
     public void reload() {
-        this.fileConfiguration = YamlConfiguration.loadConfiguration(configPath.toFile());
-        load();
+        this.fileConfiguration = YamlConfiguration.loadConfiguration(this.configPath.toFile());
+        this.load();
     }
-
 
     public int getServerSendTickMaxBytes() {
         return this.serverSendSecondMaxBytes / 20;
