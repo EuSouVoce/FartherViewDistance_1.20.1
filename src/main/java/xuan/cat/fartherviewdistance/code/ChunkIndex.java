@@ -21,6 +21,7 @@ import xuan.cat.fartherviewdistance.code.command.Command;
 import xuan.cat.fartherviewdistance.code.data.ConfigData;
 import xuan.cat.fartherviewdistance.code.data.viewmap.ViewShape;
 import xuan.cat.fartherviewdistance.code.metrics.MetricsCollector;
+import xuan.cat.fartherviewdistance.code.util.FoliaCompat;
 
 import java.util.Set;
 
@@ -49,7 +50,8 @@ public final class ChunkIndex extends JavaPlugin {
             ChunkIndex.branchMinecraft = new MinecraftCode();
             ChunkIndex.chunkServer = new ChunkServer(ChunkIndex.configData, this, ViewShape.ROUND,
                     ChunkIndex.branchMinecraft, ChunkIndex.branchPacket);
-        } else {
+        }
+        else {
             this.getLogger().warning(
                     "Unsupported Version, for versions < 1.21.4 downgrade to 9.9.2, for versions > 1.21.4 download the corresponding version");
             this.getServer().getPluginManager().disablePlugin((Plugin) this);
@@ -148,7 +150,7 @@ public final class ChunkIndex extends JavaPlugin {
 
     /**
      * Set up custom metrics charts for bStats
-     * 
+     *
      * @param metrics The bStats metrics instance
      */
     private void setupCustomMetrics(final Metrics metrics) {
@@ -222,5 +224,4 @@ public final class ChunkIndex extends JavaPlugin {
     public static Plugin getPlugin() {
         return ChunkIndex.plugin;
     }
-
 }
