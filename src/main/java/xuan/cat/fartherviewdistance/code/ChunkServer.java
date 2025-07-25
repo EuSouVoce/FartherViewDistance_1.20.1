@@ -80,18 +80,41 @@ public final class ChunkServer {
         this.branchMinecraft = branchMinecraft;
         this.branchPacket = branchPacket;
         this.viewShape = viewShape;
-
+        
         this.bukkitTasks.add(Bukkit.getGlobalRegionScheduler()
-                .runAtFixedRate(plugin, $ -> this.tickSync(), 1, 1));
-
+                .runAtFixedRate(plugin, this::tickSync, 1, 1));
+        
         this.bukkitTasks.add(Bukkit.getAsyncScheduler()
-                .runAtFixedRate(plugin, $ -> this.tickAsync(), 50, 50, TimeUnit.MILLISECONDS));
-
-        this.bukkitTasks.add(Bukkit.getAsyncScheduler()
-                .runAtFixedRate(plugin, $ -> this.tickReport(), 1000, 1000, TimeUnit.MILLISECONDS));
+                .runAtFixedRate(plugin, this::tickAsync, 50, 50, TimeUnit.MILLISECONDS));
 
         this.reloadMultithreaded();
     }
+
+    private void tickAsync(ScheduledTask scheduledTask) {
+        this.serverNetworkTraffic.next();
+        this.worldsNetworkTraffic.values().forEach(NetworkTraffic::next);
+        this.playersViewMap.values().forEach(view -> {
+            view.networkTraffic.next();
+            view.networkSpeed.next();
+        });
+        this.serverGeneratedChunk.set(0);
+        this.worldsGeneratedChunk.values().forEach(generatedChunk -> generatedChunk.set(0));
+    }
+
+    private void tickSync(ScheduledTask scheduledTask) {
+        final List<World> worldList = Bukkit.getWorlds();
+        Collections.shuffle(worldList);
+        this.lastWorldList = worldList;
+        this.waitMoveSyncQueue.removeIf(runnable -> {
+            try {
+                runnable.run();
+            } catch (final Exception exception) {
+                exception.printStackTrace();
+            }
+            return true;
+        });
+    }
+
 
     public PlayerChunkView initView(final Player player) {
         final PlayerChunkView view = new PlayerChunkView(player, this.configData, this.viewShape, this.branchPacket);
