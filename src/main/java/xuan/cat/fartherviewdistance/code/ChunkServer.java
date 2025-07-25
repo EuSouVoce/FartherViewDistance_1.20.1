@@ -80,10 +80,10 @@ public final class ChunkServer {
         this.branchMinecraft = branchMinecraft;
         this.branchPacket = branchPacket;
         this.viewShape = viewShape;
-        
+
         this.bukkitTasks.add(Bukkit.getGlobalRegionScheduler()
                 .runAtFixedRate(plugin, this::tickSync, 1, 1));
-        
+
         this.bukkitTasks.add(Bukkit.getAsyncScheduler()
                 .runAtFixedRate(plugin, this::tickAsync, 50, 50, TimeUnit.MILLISECONDS));
 
@@ -350,9 +350,11 @@ public final class ChunkServer {
         Bukkit.getPluginManager().callEvent(event);
         if (event.isCancelled()) return;
 
-        if (configWorld.preventXray != null && configWorld.preventXray.size() > 0) {
-            for (final Map.Entry<BlockData, BlockData[]> conversionMap : configWorld.preventXray.entrySet())
-                chunk.replaceAllMaterial(conversionMap.getValue(), conversionMap.getKey());
+        if (configWorld.preventXray != null && !configWorld.preventXray.isEmpty()) {
+            Bukkit.getAsyncScheduler().runNow(plugin, (plugin) -> {
+                for (final Map.Entry<BlockData, BlockData[]> conversionMap : configWorld.preventXray.entrySet())
+                    chunk.replaceAllMaterial(conversionMap.getValue(), conversionMap.getKey());
+            });
         }
 
         final AtomicInteger consumeTraffic = new AtomicInteger(0);
