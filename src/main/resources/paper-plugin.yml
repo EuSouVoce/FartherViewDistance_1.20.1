@@ -2,6 +2,7 @@ name: FartherViewDistance
 version: ${project.version}
 main: xuan.cat.fartherviewdistance.code.ChunkIndex
 api-version: "1.21"
+folia-supported: true
 authors: [xuancat0208, EuSouVoce, Lumine1909, Mapacheee]
 dependencies:
   server:
