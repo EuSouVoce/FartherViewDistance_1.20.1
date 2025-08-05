@@ -19,6 +19,7 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
 import net.minecraft.server.level.ChunkHolder;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -118,6 +119,12 @@ public final class MinecraftCode implements BranchMinecraft {
             public void write(final ChannelHandlerContext ctx, final Object msg, final ChannelPromise promise)
                     throws Exception {
                 if (msg instanceof Packet) {
+                    // skip ClientboundSetEntityDataPacket to avoid conflicts with MythicMobs
+                    if (msg instanceof ClientboundSetEntityDataPacket) {
+                        super.write(ctx, msg, promise);
+                        return;
+                    }
+
                     if (!ProxyPlayerConnectionCode.write(player, (Packet<?>) msg))
                         return;
                 }
