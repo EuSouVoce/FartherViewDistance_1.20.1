@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
 import org.bukkit.World;
 import org.bukkit.craftbukkit.CraftChunk;
 import org.bukkit.craftbukkit.CraftWorld;
@@ -120,6 +121,10 @@ public final class MinecraftCode implements BranchMinecraft {
                 if (msg instanceof Packet) {
                     if (!ProxyPlayerConnectionCode.write(player, (Packet<?>) msg))
                         return;
+                    if (msg instanceof ClientboundSetEntityDataPacket)
+                        super.write(ctx, msg, promise);
+                        return;
+
                 }
                 super.write(ctx, msg, promise);
             }
