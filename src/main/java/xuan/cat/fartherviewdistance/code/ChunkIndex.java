@@ -32,7 +32,7 @@ public final class ChunkIndex extends JavaPlugin {
     private static ConfigData configData;
     private static BranchPacket branchPacket;
     private static BranchMinecraft branchMinecraft;
-    private static final Set<String> SUPPORTED = Set.of("1.21.7", "1.21.8");
+    private static final Set<String> SUPPORTED = Set.of("1.21.7", "1.21.8", "1.21.9");
 
     @Override
     public void onEnable() {
