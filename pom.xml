@@ -6,7 +6,7 @@
 
     <groupId>FartherViewDistance</groupId>
     <artifactId>FartherViewDistance</artifactId>
-    <version>10.2.3</version>
+    <version>10.2.4</version>
     <packaging>jar</packaging>
 
     <name>FartherViewDistance</name>
