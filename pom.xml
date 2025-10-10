@@ -6,7 +6,7 @@
 
     <groupId>FartherViewDistance</groupId>
     <artifactId>FartherViewDistance</artifactId>
-    <version>10.2.4</version>
+    <version>10.3.0</version>
     <packaging>jar</packaging>
 
     <name>FartherViewDistance</name>
@@ -41,7 +41,7 @@
             <plugin>
                 <groupId>ca.bkaw</groupId>
                 <artifactId>paper-nms-maven-plugin</artifactId>
-                <version>1.4.7</version>
+                <version>1.4.10</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -102,7 +102,7 @@
         <dependency>
             <groupId>ca.bkaw</groupId>
             <artifactId>paper-nms</artifactId>
-            <version>1.21.7-SNAPSHOT</version>
+            <version>1.21.10-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
