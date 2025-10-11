@@ -8,6 +8,7 @@ import java.util.Map;
 import org.jetbrains.annotations.Nullable;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.DynamicOps;
 
 import it.unimi.dsi.fastutil.shorts.ShortList;
 import net.minecraft.SharedConstants;
@@ -29,7 +30,6 @@ import net.minecraft.server.level.ThreadedLevelLightEngine;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.biome.Biome;
-import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -40,6 +40,7 @@ import net.minecraft.world.level.chunk.DataLayer;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.level.chunk.PalettedContainer;
+import net.minecraft.world.level.chunk.PalettedContainerFactory;
 import net.minecraft.world.level.chunk.PalettedContainerRO;
 import net.minecraft.world.level.chunk.ProtoChunk;
 import net.minecraft.world.level.chunk.UpgradeData;
@@ -72,11 +73,6 @@ public final class ChunkRegionLoader {
         return ChunkCode.ofStatus(ChunkStatus.byName(nbt.getString("Status").get()));
     }
 
-    private static Codec<PalettedContainerRO<Holder<Biome>>> makeBiomeCodec(final Registry<Biome> biomeRegistry) {
-        return PalettedContainer.codecRO(biomeRegistry.asHolderIdMap(), biomeRegistry.holderByNameCodec(),
-                PalettedContainer.Strategy.SECTION_BIOMES, biomeRegistry.getOrThrow(Biomes.PLAINS));
-    }
-
     public static BranchChunk loadChunk(final ServerLevel world, final int chunkX, final int chunkZ,
             final CompoundTag nbt,
             final boolean integralHeightmap) {
@@ -104,11 +100,13 @@ public final class ChunkRegionLoader {
         final LevelChunkSection[] sections = new LevelChunkSection[sectionsCount];
         final ServerChunkCache chunkSource = world.getChunkSource();
         final LevelLightEngine lightEngine = chunkSource.getLightEngine();
-        final Registry<Biome> biomeRegistry = world.registryAccess().lookupOrThrow(Registries.BIOME);
-        final Codec<PalettedContainer<Holder<Biome>>> paletteCodec = PalettedContainer.codecRW(
-                biomeRegistry.asHolderIdMap(),
-                biomeRegistry.holderByNameCodec(), PalettedContainer.Strategy.SECTION_BIOMES,
-                biomeRegistry.getOrThrow(Biomes.PLAINS), null);
+
+        final PalettedContainerFactory palettedContainerFactory = world.palettedContainerFactory();
+
+        final Codec<PalettedContainer<Holder<Biome>>> biomeCodec = palettedContainerFactory.biomeContainerRWCodec();
+        final Codec<PalettedContainer<BlockState>> blockStateCodecFromFactory = palettedContainerFactory
+                .blockStatesContainerCodec();
+
         for (int sectionIndex = 0; sectionIndex < sectionArrayNBT.size(); ++sectionIndex) {
             final CompoundTag sectionNBT = sectionArrayNBT.getCompoundOrEmpty(sectionIndex);
             final byte locationY = sectionNBT.getByteOr("Y", (byte) 0);
@@ -119,31 +117,27 @@ public final class ChunkRegionLoader {
                         chunkPos,
                         sectionY);
                 final Codec<PalettedContainer<BlockState>> blockStateCodec = presetBlockStates == null
-                        ? ChunkRegionLoader.getBlockStateCodec()
-                        : PalettedContainer.codecRW(Block.BLOCK_STATE_REGISTRY, BlockState.CODEC,
-                                PalettedContainer.Strategy.SECTION_STATES,
+                        ? blockStateCodecFromFactory
+                        : PalettedContainer.codecRW(BlockState.CODEC,
+                                palettedContainerFactory.blockStatesStrategy(),
                                 Blocks.AIR.defaultBlockState(), presetBlockStates);
+                @SuppressWarnings({ "rawtypes", "unchecked" })
                 final PalettedContainer<BlockState> paletteBlock = (PalettedContainer<BlockState>) sectionNBT
                         .getCompound("block_states")
                         .map(compoundTag1 -> ((PalettedContainer<BlockState>) blockStateCodec
-                                .parse(NbtOps.INSTANCE, compoundTag1)
+                                .parse((DynamicOps) NbtOps.INSTANCE, (Object) compoundTag1)
                                 .promotePartial(string -> {
                                 }).result().orElse(null)))
-                        .orElseGet(
-                                () -> new PalettedContainer<>(Block.BLOCK_STATE_REGISTRY,
-                                        Blocks.AIR.defaultBlockState(),
-                                        PalettedContainer.Strategy.SECTION_STATES, presetBlockStates));
+                        .orElseGet(palettedContainerFactory::createForBlockStates);
                 // Biome converter
                 final PalettedContainer<Holder<Biome>> paletteBiome = (PalettedContainer<Holder<Biome>>) sectionNBT
                         .getCompound("biomes")
-                        .map(compoundTag1 -> ((PalettedContainer<Holder<Biome>>) paletteCodec
+                        .map(compoundTag1 -> ((PalettedContainer<Holder<Biome>>) biomeCodec
                                 .parse(NbtOps.INSTANCE, compoundTag1)
                                 .promotePartial(string -> {
 
                                 }).result().orElse(null)))
-                        .orElseGet(() -> new PalettedContainer<Holder<Biome>>(biomeRegistry.asHolderIdMap(),
-                                biomeRegistry.getOrThrow(Biomes.PLAINS), PalettedContainer.Strategy.SECTION_BIOMES,
-                                (Holder<Biome> @Nullable []) null));
+                        .orElseGet(palettedContainerFactory::createForBiomes);
                 final LevelChunkSection chunkSection = new LevelChunkSection(paletteBlock, paletteBiome);
                 sections[sectionY] = chunkSection;
             }
@@ -196,18 +190,21 @@ public final class ChunkRegionLoader {
 
             }
         } else {
+
             final List<SavedTick<Block>> ListTicksBlock = SavedTick.filterTickListForChunk(
-                    (List<SavedTick<Block>>) nbt.read("block_ticks", ChunkRegionLoader.getBlockTicksCodec())
-                            .orElse(List.of()),
-                    chunkPos);
+                    nbt.read("block_ticks", ChunkRegionLoader.getBlockTicksCodec()).orElse(List.of()), chunkPos);
             final List<SavedTick<Fluid>> ListTicksFluid = SavedTick.filterTickListForChunk(
-                    (List<SavedTick<Fluid>>) nbt.read("fluid_ticks", ChunkRegionLoader.getFluidTicksCodec())
-                            .orElse(List.of()),
-                    chunkPos);
+                    nbt.read("fluid_ticks", ChunkRegionLoader.getFluidTicksCodec()).orElse(List.of()), chunkPos);
+
+            final ProtoChunkTicks<Block> protoChunkTicksBlocks = ProtoChunkTicks.load(ListTicksBlock);
+            final ProtoChunkTicks<Fluid> protoChunkTicksFluids = ProtoChunkTicks.load(ListTicksFluid);
+
             final ProtoChunk protochunk = new ProtoChunk(chunkPos, upgradeData, sections,
-                    (ProtoChunkTicks<Block>) ProtoChunkTicks.load(ListTicksBlock),
-                    (ProtoChunkTicks<Fluid>) ProtoChunkTicks.load(ListTicksFluid), world, biomeRegistry, blendingData);
+                    protoChunkTicksBlocks,
+                    protoChunkTicksFluids, world, palettedContainerFactory, blendingData);
+
             chunk = protochunk;
+
             protochunk.setInhabitedTime(inhabitedTime);
             if (nbt.contains("below_zero_retrogen")) {
                 final BelowZeroRetrogen tmp = (BelowZeroRetrogen) nbt
@@ -351,19 +348,6 @@ public final class ChunkRegionLoader {
         return null;
     }
 
-    @SuppressWarnings("unchecked")
-    private static Codec<PalettedContainer<BlockState>> getBlockStateCodec() {
-        Field field = null;
-        try {
-            field = SerializableChunkData.class.getDeclaredField("BLOCK_STATE_CODEC");
-            field.setAccessible(true);
-            return (Codec<PalettedContainer<BlockState>>) field.get(null);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
     public static BranchChunkLight loadLight(final ServerLevel world, final CompoundTag nbt) {
         // Data version checker
         if (nbt.contains("DataVersion")) {
@@ -427,9 +411,11 @@ public final class ChunkRegionLoader {
         final ThreadedLevelLightEngine lightEngine = world.getChunkSource().getLightEngine();
 
         // Biome parser
-        final Registry<Biome> biomeRegistry = world.registryAccess().lookupOrThrow(Registries.BIOME);
-        final Codec<PalettedContainerRO<Holder<Biome>>> paletteCodec = ChunkRegionLoader
-                .makeBiomeCodec(biomeRegistry);
+        final PalettedContainerFactory palettedContainerFactory = world.palettedContainerFactory();
+
+        final Codec<PalettedContainer<BlockState>> palleteBlockStatecodec = palettedContainerFactory.blockStatesContainerCodec();
+        final Codec<PalettedContainerRO<Holder<Biome>>> paletteCodec = palettedContainerFactory.biomeContainerCodec();
+        
         boolean lightCorrect = false;
 
         for (int locationY = lightEngine.getMinLightSection(); locationY < lightEngine
@@ -441,13 +427,14 @@ public final class ChunkRegionLoader {
 
             blockNibble = chunk.starlight$getBlockNibbles()[locationY - minSection].toVanillaNibble();
             skyNibble = chunk.starlight$getSkyNibbles()[locationY - minSection].toVanillaNibble();
+            
 
             if (inSections || blockNibble != null || skyNibble != null) {
                 final CompoundTag sectionNBT = new CompoundTag();
                 if (inSections) {
                     final LevelChunkSection chunkSection = chunkSections[sectionY];
                     asyncRunnable.add(() -> {
-                        sectionNBT.put("block_states", SerializableChunkData.BLOCK_STATE_CODEC
+                        sectionNBT.put("block_states", palleteBlockStatecodec
                                 .encodeStart(NbtOps.INSTANCE, chunkSection.getStates()).getOrThrow());
                         sectionNBT.put("biomes",
                                 paletteCodec.encodeStart(NbtOps.INSTANCE, chunkSection.getBiomes()).getOrThrow());

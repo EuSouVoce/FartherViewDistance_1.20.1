@@ -31,7 +31,7 @@ public final class ChunkIndex extends JavaPlugin {
     private static ConfigData configData;
     private static BranchPacket branchPacket;
     private static BranchMinecraft branchMinecraft;
-    private static final Set<String> SUPPORTED = Set.of("1.21.7", "1.21.8", "1.21.9", "1.21.10");
+    private static final Set<String> SUPPORTED = Set.of("1.21.10");
 
     @Override
     public void onEnable() {
@@ -44,7 +44,7 @@ public final class ChunkIndex extends JavaPlugin {
         final String bukkitVersion = Bukkit.getBukkitVersion();
         final String minecraftVersion = Bukkit.getMinecraftVersion();
 
-        if (SUPPORTED.contains(minecraftVersion)) {
+        if (ChunkIndex.SUPPORTED.contains(minecraftVersion)) {
             ChunkIndex.branchPacket = new PacketCode();
             ChunkIndex.branchMinecraft = new MinecraftCode();
             ChunkIndex.chunkServer = new ChunkServer(ChunkIndex.configData, this, ViewShape.ROUND,

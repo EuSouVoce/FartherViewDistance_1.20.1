@@ -13,7 +13,6 @@ import org.bukkit.craftbukkit.block.CraftBiome;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.util.Vector;
 
-import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Block;
@@ -33,26 +32,29 @@ public final class ChunkCode implements BranchChunk {
     private final LevelChunk levelChunk;
     private final ServerLevel worldServer;
 
-    public ChunkCode(ServerLevel worldServer, LevelChunk levelChunk) {
+    public ChunkCode(final ServerLevel worldServer, final LevelChunk levelChunk) {
         this.levelChunk = levelChunk;
         this.worldServer = worldServer;
     }
 
-    public BranchNBT toNBT(BranchChunkLight light, List<Runnable> asyncRunnable) {
+    @Override
+    public BranchNBT toNBT(final BranchChunkLight light, final List<Runnable> asyncRunnable) {
         return new ChunkNBT(
-                ChunkRegionLoader.saveChunk(worldServer, levelChunk, (ChunkLightCode) light, asyncRunnable));
+                ChunkRegionLoader.saveChunk(this.worldServer, this.levelChunk, (ChunkLightCode) light, asyncRunnable));
     }
 
     LevelChunk getLevelChunk() {
-        return levelChunk;
+        return this.levelChunk;
     }
 
+    @Override
     public org.bukkit.Chunk getChunk() {
-        return new CraftChunk(levelChunk);
+        return new CraftChunk(this.levelChunk);
     }
 
+    @Override
     public org.bukkit.World getWorld() {
-        return worldServer.getWorld();
+        return this.worldServer.getWorld();
     }
 
     public BlockState getIBlockData(final int x, final int y, final int z) {
@@ -75,7 +77,7 @@ public final class ChunkCode implements BranchChunk {
 
             if (chunkSection == null) {
                 chunkSection = chunkSections[indexY] = new LevelChunkSection(
-                        this.worldServer.registryAccess().lookupOrThrow(Registries.BIOME), this.levelChunk.getLevel(),
+                        this.levelChunk.level.palettedContainerFactory(), this.levelChunk.getLevel(),
                         new ChunkPos(this.levelChunk.locX, this.levelChunk.locZ), indexY);
             }
             chunkSection.setBlockState(x & 15, y & 15, z & 15, iBlockData, false);
@@ -106,15 +108,16 @@ public final class ChunkCode implements BranchChunk {
             this.setIBlockData(x, y, z, iBlockData);
     }
 
+    @Override
     public Map<Vector, BlockData> getBlockDataMap() {
-        Map<Vector, BlockData> vectorBlockDataMap = new HashMap<>();
-        int maxHeight = worldServer.getMaxY();
-        int minHeight = worldServer.getMinY();
+        final Map<Vector, BlockData> vectorBlockDataMap = new HashMap<>();
+        final int maxHeight = this.worldServer.getMaxY();
+        final int minHeight = this.worldServer.getMinY();
         for (int x = 0; x < 16; x++) {
             for (int y = minHeight; y < maxHeight; y++) {
                 for (int z = 0; z < 16; z++) {
-                    BlockData blockData = this.getBlockData(x, y, z);
-                    org.bukkit.Material material = blockData.getMaterial();
+                    final BlockData blockData = this.getBlockData(x, y, z);
+                    final org.bukkit.Material material = blockData.getMaterial();
                     if (material != org.bukkit.Material.AIR && material != org.bukkit.Material.VOID_AIR
                             && material != org.bukkit.Material.CAVE_AIR) {
                         vectorBlockDataMap.put(new Vector(x, y, z), blockData);
@@ -126,20 +129,22 @@ public final class ChunkCode implements BranchChunk {
         return vectorBlockDataMap;
     }
 
+    @Override
     public int getX() {
-        return levelChunk.getPos().x;
+        return this.levelChunk.getPos().x;
     }
 
+    @Override
     public int getZ() {
-        return levelChunk.getPos().z;
+        return this.levelChunk.getPos().z;
     }
 
     private static Field field_LevelChunkSection_nonEmptyBlockCount;
     static {
         try {
-            field_LevelChunkSection_nonEmptyBlockCount = LevelChunkSection.class.getDeclaredField("nonEmptyBlockCount");
-            field_LevelChunkSection_nonEmptyBlockCount.setAccessible(true);
-        } catch (NoSuchFieldException exception) {
+            ChunkCode.field_LevelChunkSection_nonEmptyBlockCount = LevelChunkSection.class.getDeclaredField("nonEmptyBlockCount");
+            ChunkCode.field_LevelChunkSection_nonEmptyBlockCount.setAccessible(true);
+        } catch (final NoSuchFieldException exception) {
             exception.printStackTrace();
         }
     }
@@ -177,7 +182,7 @@ public final class ChunkCode implements BranchChunk {
                     blocks.getAndSetUnchecked(location & 15, location >> 8 & 15, location >> 4 & 15, toI);
                 });
                 try {
-                    field_LevelChunkSection_nonEmptyBlockCount.set(section, counts.shortValue());
+                    ChunkCode.field_LevelChunkSection_nonEmptyBlockCount.set(section, counts.shortValue());
                 } catch (final IllegalAccessException exception) {
                     exception.printStackTrace();
                 }
@@ -185,45 +190,54 @@ public final class ChunkCode implements BranchChunk {
         }
     }
 
-    public org.bukkit.Material getMaterial(int x, int y, int z) {
-        return getBlockData(x, y, z).getMaterial();
+    @Override
+    public org.bukkit.Material getMaterial(final int x, final int y, final int z) {
+        return this.getBlockData(x, y, z).getMaterial();
     }
 
-    public void setMaterial(int x, int y, int z, org.bukkit.Material material) {
-        setBlockData(x, y, z, material.createBlockData());
+    @Override
+    public void setMaterial(final int x, final int y, final int z, final org.bukkit.Material material) {
+        this.setBlockData(x, y, z, material.createBlockData());
     }
 
+    @Override
     @Deprecated
-    public org.bukkit.block.Biome getBiome(int x, int z) {
+    public org.bukkit.block.Biome getBiome(final int x, final int z) {
         return this.getBiome(x, 0, z);
     }
 
-    public org.bukkit.block.Biome getBiome(int x, int y, int z) {
-        return CraftBiome.minecraftHolderToBukkit(levelChunk.getNoiseBiome(x, y, z));
+    @Override
+    public org.bukkit.block.Biome getBiome(final int x, final int y, final int z) {
+        return CraftBiome.minecraftHolderToBukkit(this.levelChunk.getNoiseBiome(x, y, z));
     }
 
+    @Override
     @Deprecated
-    public void setBiome(int x, int z, org.bukkit.block.Biome biome) {
-        setBiome(x, 0, z, biome);
+    public void setBiome(final int x, final int z, final org.bukkit.block.Biome biome) {
+        this.setBiome(x, 0, z, biome);
     }
 
-    public void setBiome(int x, int y, int z, org.bukkit.block.Biome biome) {
-        levelChunk.setBiome(x, y, z, CraftBiome.bukkitToMinecraftHolder(biome));
+    @Override
+    public void setBiome(final int x, final int y, final int z, final org.bukkit.block.Biome biome) {
+        this.levelChunk.setBiome(x, y, z, CraftBiome.bukkitToMinecraftHolder(biome));
     }
 
-    public boolean hasFluid(int x, int y, int z) {
-        return !getIBlockData(x, y, z).getFluidState().isEmpty();
+    @Override
+    public boolean hasFluid(final int x, final int y, final int z) {
+        return !this.getIBlockData(x, y, z).getFluidState().isEmpty();
     }
 
-    public boolean isAir(int x, int y, int z) {
-        return getIBlockData(x, y, z).isAir();
+    @Override
+    public boolean isAir(final int x, final int y, final int z) {
+        return this.getIBlockData(x, y, z).isAir();
     }
 
-    public int getHighestY(int x, int z) {
-        return levelChunk.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z);
+    @Override
+    public int getHighestY(final int x, final int z) {
+        return this.levelChunk.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z);
     }
 
-    public static Status ofStatus(ChunkStatus chunkStatus) {
+    public static Status ofStatus(final ChunkStatus chunkStatus) {
         if (chunkStatus == ChunkStatus.EMPTY) {
             return Status.EMPTY;
         } else if (chunkStatus == ChunkStatus.STRUCTURE_STARTS) {
@@ -252,7 +266,8 @@ public final class ChunkCode implements BranchChunk {
         return Status.EMPTY;
     }
 
+    @Override
     public Status getStatus() {
-        return ofStatus(levelChunk.getPersistedStatus());
+        return ChunkCode.ofStatus(this.levelChunk.getPersistedStatus());
     }
 }
