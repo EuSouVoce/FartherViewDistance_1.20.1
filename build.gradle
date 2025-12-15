@@ -1,0 +1,59 @@
+plugins {
+    id("java")
+    id("io.papermc.paperweight.userdev").version("2.0.0-beta.17")
+}
+
+int defaultJavaVersion = 21
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(properties.getOrDefault("java", defaultJavaVersion).toString())
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        name = "codemc"
+        url = uri("https://repo.codemc.org/repository/maven-public/")
+    }
+    maven {
+        name = "sonatype"
+        url = uri("https://oss.sonatype.org/content/groups/public/")
+    }
+    maven {
+        name = "placeholderapi"
+        url = uri("https://repo.extendedclip.com/releases/")
+    }
+    maven {
+        name = "imperiogames-public"
+        url = uri("https://repo.imperio.games/public/")
+    }
+    maven {
+        name = "papermc"
+        url = uri("https://repo.papermc.io/repository/maven-public/")
+    }
+    maven {
+        name = "minecraft-libraries"
+        url = uri("https://libraries.minecraft.net")
+    }
+}
+
+dependencies {
+    paperweight.paperDevBundle("${minecraft_version}-R0.1-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:${minecraft_version}-R0.1-SNAPSHOT")
+
+    compileOnly("me.clip:placeholderapi:2.11.6")
+    compileOnly("com.mojang:datafixerupper:0.0.18")
+    compileOnly("io.netty:netty-transport:${netty_version}")
+    compileOnly("io.netty:netty-common:${netty_version}")
+    compileOnly("io.netty:netty-buffer:${netty_version}")
+    compileOnly("io.netty:netty-codec:${netty_version}")
+    compileOnly("io.netty:netty-resolver:${netty_version}")
+}
+
+processResources {
+    filesMatching('paper-plugin.yml') {
+        expand(version: project.version)
+    }
+}
