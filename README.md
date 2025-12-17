@@ -28,13 +28,10 @@ bStats
 
 ### If you wish to build it yourself:
 
-1. run `mvn paper-nms:init`
-2. run `mvn package`
-3. Add the resulting jar from `./target` to your plugins folder and be happy.
-
-> Why maven? My vscode isn't working properly with gradle and also I'm more used to maven.
+1. run `./gradlew build`
+2. Add the resulting jar from `build/libs` to your plugins folder and be happy.
 
 ---
 
-#### For older versions of papermc: 
-> Check the version used on `pom.xml` based of **older commit files** that you want to compile against.
+#### Older versions
+For older versions please look through the [Releases](https://github.com/EuSouVoce/FartherViewDistance_1.20.1/releases) tab and search for the version you need.

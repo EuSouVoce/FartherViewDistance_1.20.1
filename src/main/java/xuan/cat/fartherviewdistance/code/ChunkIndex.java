@@ -31,7 +31,7 @@ public final class ChunkIndex extends JavaPlugin {
     private static ConfigData configData;
     private static BranchPacket branchPacket;
     private static BranchMinecraft branchMinecraft;
-    private static final Set<String> SUPPORTED = Set.of("1.21.10");
+    private static final Set<String> SUPPORTED = Set.of("1.21.10", "1.21.11");
 
     @Override
     public void onEnable() {
@@ -52,7 +52,7 @@ public final class ChunkIndex extends JavaPlugin {
         } else {
             this.getLogger().warning(
                     "Unsupported Version, for versions < 1.21.4 downgrade to 9.9.2, for versions > 1.21.4 download the corresponding version");
-            this.getServer().getPluginManager().disablePlugin((Plugin) this);
+            this.getServer().getPluginManager().disablePlugin(this);
             throw new IllegalArgumentException(
                     "Unsupported MC version: " + minecraftVersion + " Bukkit Version:" + bukkitVersion);
         }
@@ -66,7 +66,7 @@ public final class ChunkIndex extends JavaPlugin {
         Bukkit.getPluginManager()
                 .registerEvents(
                         new ChunkEvent(ChunkIndex.chunkServer, ChunkIndex.branchPacket, ChunkIndex.branchMinecraft),
-                        (Plugin) this);
+                        this);
         // protocolManager.addPacketListener(new ChunkPacketEvent(plugin, chunkServer));
         try {
             if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
