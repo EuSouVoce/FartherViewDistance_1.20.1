@@ -1,8 +1,8 @@
 name: FartherViewDistance
-version: ${project.version}
+version: $version
 main: xuan.cat.fartherviewdistance.code.ChunkIndex
 api-version: "1.21"
-authors: [xuancat0208, EuSouVoce, Lumine1909, Mapacheee]
+authors: [xuancat0208, EuSouVoce, Lumine1909, Mapacheee just_lofe]
 dependencies:
   server:
     PlaceholderAPI:
