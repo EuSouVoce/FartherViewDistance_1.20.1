@@ -1,11 +1,11 @@
 package xuan.cat.fartherviewdistance.code.branch;
 
 import java.lang.reflect.Field;
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Set;
 
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.CraftChunk;
@@ -23,7 +23,6 @@ import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.level.chunk.PalettedContainer;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.levelgen.Heightmap;
-import net.minecraft.world.level.material.FluidState;
 import xuan.cat.fartherviewdistance.api.branch.BranchChunk;
 import xuan.cat.fartherviewdistance.api.branch.BranchChunkLight;
 import xuan.cat.fartherviewdistance.api.branch.BranchNBT;
@@ -151,40 +150,44 @@ public final class ChunkCode implements BranchChunk {
 
     @Override
     public void replaceAllMaterial(final BlockData[] target, final BlockData to) {
-        final Map<Block, BlockState> targetMap = new HashMap<>();
+        final Set<Block> targetBlocks = new HashSet<>();
         for (final BlockData targetData : target) {
             final BlockState targetState = ((CraftBlockData) targetData).getState();
-            targetMap.put(targetState.getBlock(), targetState);
+            targetBlocks.add(targetState.getBlock());
         }
         final BlockState toI = ((CraftBlockData) to).getState();
         for (final LevelChunkSection section : this.levelChunk.getSections()) {
             if (section != null) {
-                final AtomicInteger counts = new AtomicInteger();
                 final PalettedContainer<BlockState> blocks = section.getStates();
-                final List<Integer> conversionLocationList = new ArrayList<>();
-                final PalettedContainer.CountConsumer<BlockState> forEachLocation = (state, location) -> {
-                    if (state == null)
-                        return;
-                    final BlockState targetState = targetMap.get(state.getBlock());
-                    if (targetState != null) {
-                        conversionLocationList.add(location);
-                        state = toI;
-                    }
-                    if (!state.isAir())
-                        counts.incrementAndGet();
-                    final FluidState fluid = state.getFluidState();
-                    if (!fluid.isEmpty())
-                        counts.incrementAndGet();
-                };
 
-                blocks.count(forEachLocation);
-                conversionLocationList.forEach(location -> {
-                    blocks.getAndSetUnchecked(location & 15, location >> 8 & 15, location >> 4 & 15, toI);
+                // Fast path: if this section doesn't contain any target blocks in its palette,
+                // avoid scanning all 4096 positions.
+                final boolean[] hasTarget = new boolean[] { false };
+                blocks.count((state, count) -> {
+                    if (!hasTarget[0] && state != null && count > 0 && targetBlocks.contains(state.getBlock())) {
+                        hasTarget[0] = true;
+                    }
                 });
-                try {
-                    ChunkCode.field_LevelChunkSection_nonEmptyBlockCount.set(section, counts.shortValue());
-                } catch (final IllegalAccessException exception) {
-                    exception.printStackTrace();
+                if (!hasTarget[0]) {
+                    continue;
+                }
+
+                // NOTE: PalettedContainer#count provides (state, count) pairs, not per-block locations.
+                // We must iterate all 4096 positions in the section to actually replace blocks.
+                for (int y = 0; y < 16; y++) {
+                    for (int z = 0; z < 16; z++) {
+                        for (int x = 0; x < 16; x++) {
+                            BlockState state = blocks.get(x, y, z);
+                            if (state == null) {
+                                state = Blocks.AIR.defaultBlockState();
+                            }
+
+                            if (targetBlocks.contains(state.getBlock())) {
+                                state = toI;
+                                blocks.getAndSetUnchecked(x, y, z, toI);
+                            }
+                        }
+                    }
                 }
             }
         }

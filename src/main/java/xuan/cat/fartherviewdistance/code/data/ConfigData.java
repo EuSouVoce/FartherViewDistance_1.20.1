@@ -298,6 +298,8 @@ public final class ConfigData {
                     }
                 }
             }
+            this.plugin.getLogger().info("worlds->" + worldName + " Prevent Xray conversion map size: "
+                    + preventXrayConversionMap.size());
             return preventXrayConversionMap;
         }
     }
