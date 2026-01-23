@@ -12,6 +12,10 @@ bStats
 ------
 [![bStats Graph Data](https://bstats.org/signatures/bukkit/FartherViewDistance.svg)](https://bstats.org/plugin/bukkit/FartherViewDistance/26238/)
 
+Architecture diagrams (Mermaid)
+------------------------------
+See [docs/DIAGRAMS.md](docs/DIAGRAMS.md) for process and routine diagrams.
+
 
 ## ~~How-to?~~
 
