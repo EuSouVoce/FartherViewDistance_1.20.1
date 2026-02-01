@@ -4,6 +4,7 @@ import java.lang.reflect.Field;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -479,12 +480,24 @@ public final class ChunkRegionLoader {
 
         // Block entities
         final ListTag blockEntitiesNBT = new ListTag();
-        for (final BlockPos blockPos : chunk.getBlockEntitiesPos()) {
-            final CompoundTag blockEntity = chunk.getBlockEntityNbtForSaving(blockPos, world.registryAccess());
-            if (blockEntity != null) {
-                blockEntitiesNBT.add(blockEntity);
-            }
+        Set<BlockPos> blockEntitiesPos = Set.of();
+        try {
+            // Avoiding NullPointerException in some rare edge cases.
+            blockEntitiesPos = chunk.getBlockEntitiesPos();
+        } catch (final Exception e) {
+            // noop
         }
+        if(blockEntitiesPos != null && !blockEntitiesPos.isEmpty())
+            for (final BlockPos blockPos : blockEntitiesPos) {
+                try {
+                    final CompoundTag blockEntity = chunk.getBlockEntityNbtForSaving(blockPos, world.registryAccess());
+                    if (blockEntity != null) {
+                        blockEntitiesNBT.add(blockEntity);
+                    }
+                } catch (final Exception e) {
+                    // noop
+                }
+            }
         nbt.put("block_entities", blockEntitiesNBT);
 
         if (chunk.getPersistedStatus().getChunkType() == ChunkType.PROTOCHUNK) { // Not Generated yet, ignore it
