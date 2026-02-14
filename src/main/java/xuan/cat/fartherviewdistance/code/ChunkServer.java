@@ -236,6 +236,27 @@ public final class ChunkServer {
     }
 
     /**
+     * Serializes a live chunk on the server thread to avoid async access to mutable
+     * NMS chunk internals.
+     */
+    private BranchNBT toNbtSync(final World world, final Chunk chunk, final BranchChunkLight chunkLight)
+            throws InterruptedException, ExecutionException {
+        final CompletableFuture<BranchNBT> syncNBT = new CompletableFuture<>();
+        this.waitMoveSyncQueue.add(() -> {
+            try {
+                final List<Runnable> asyncRunnable = new ArrayList<>();
+                final BranchNBT chunkNBT = this.branchMinecraft.fromChunk(world, chunk).toNBT(chunkLight, asyncRunnable);
+                // These runnables capture live chunk section data and must also run on the server thread.
+                asyncRunnable.forEach(Runnable::run);
+                syncNBT.complete(chunkNBT);
+            } catch (final Throwable throwable) {
+                syncNBT.completeExceptionally(throwable);
+            }
+        });
+        return syncNBT.get();
+    }
+
+    /**
      * Updates cumulative reports for the server, worlds, and players.
      */
     private void tickReport() {
@@ -436,11 +457,8 @@ public final class ChunkServer {
                                                     view.cumulativeReport.increaseLoadSlow();
                                                     threadCumulativeReport.increaseLoadSlow();
                                                     try {
-                                                        final List<Runnable> asyncRunnable = new ArrayList<>();
                                                         final BranchChunkLight chunkLight = this.branchMinecraft.fromLight(world);
-                                                        final BranchNBT chunkNBT = this.branchMinecraft.fromChunk(world, chunk)
-                                                                .toNBT(chunkLight, asyncRunnable);
-                                                        asyncRunnable.forEach(Runnable::run);
+                                                        final BranchNBT chunkNBT = this.toNbtSync(world, chunk, chunkLight);
                                                         this.sendChunk(world, configWorld, worldNetworkTraffic, view, chunkX,
                                                                 chunkZ, chunkNBT, chunkLight, syncKey,
                                                                 worldCumulativeReport, threadCumulativeReport);
@@ -466,18 +484,9 @@ public final class ChunkServer {
                                                     view.cumulativeReport.increaseLoadSlow();
                                                     threadCumulativeReport.increaseLoadSlow();
                                                     try {
-                                                        final List<Runnable> asyncRunnable = new ArrayList<>();
                                                         final BranchChunkLight chunkLight = this.branchMinecraft.fromLight(world);
-                                                        final CompletableFuture<BranchNBT> syncNBT = new CompletableFuture<>();
-                                                        this.waitMoveSyncQueue
-                                                                .add(() -> syncNBT
-                                                                        .complete(this.branchMinecraft
-                                                                                .fromChunk(world,
-                                                                                        world.getChunkAt(chunkX,
-                                                                                                chunkZ))
-                                                                                .toNBT(chunkLight, asyncRunnable)));
-                                                        final BranchNBT chunkNBT = syncNBT.get();
-                                                        asyncRunnable.forEach(Runnable::run);
+                                                    final BranchNBT chunkNBT = this.toNbtSync(world, world.getChunkAt(chunkX,
+                                                        chunkZ), chunkLight);
                                                         this.sendChunk(world, configWorld, worldNetworkTraffic, view, chunkX,
                                                                 chunkZ, chunkNBT, chunkLight, syncKey,
                                                                 worldCumulativeReport, threadCumulativeReport);
