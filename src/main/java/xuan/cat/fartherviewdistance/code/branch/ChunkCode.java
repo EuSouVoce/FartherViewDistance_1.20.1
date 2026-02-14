@@ -141,7 +141,8 @@ public final class ChunkCode implements BranchChunk {
     private static Field field_LevelChunkSection_nonEmptyBlockCount;
     static {
         try {
-            ChunkCode.field_LevelChunkSection_nonEmptyBlockCount = LevelChunkSection.class.getDeclaredField("nonEmptyBlockCount");
+            ChunkCode.field_LevelChunkSection_nonEmptyBlockCount = LevelChunkSection.class
+                    .getDeclaredField("nonEmptyBlockCount");
             ChunkCode.field_LevelChunkSection_nonEmptyBlockCount.setAccessible(true);
         } catch (final NoSuchFieldException exception) {
             exception.printStackTrace();
@@ -172,7 +173,8 @@ public final class ChunkCode implements BranchChunk {
                     continue;
                 }
 
-                // NOTE: PalettedContainer#count provides (state, count) pairs, not per-block locations.
+                // NOTE: PalettedContainer#count provides (state, count) pairs, not per-block
+                // locations.
                 // We must iterate all 4096 positions in the section to actually replace blocks.
                 for (int y = 0; y < 16; y++) {
                     for (int z = 0; z < 16; z++) {

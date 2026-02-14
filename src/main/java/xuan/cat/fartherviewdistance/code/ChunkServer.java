@@ -87,7 +87,8 @@ public final class ChunkServer {
      * and other components.
      * Sets up scheduled tasks for synchronous and asynchronous operations.
      */
-    public ChunkServer(final ConfigData configData, final Plugin plugin, final ViewShape viewShape, final BranchMinecraft branchMinecraft,
+    public ChunkServer(final ConfigData configData, final Plugin plugin, final ViewShape viewShape,
+            final BranchMinecraft branchMinecraft,
             final BranchPacket branchPacket) {
         this.configData = configData;
         this.plugin = plugin;
@@ -245,8 +246,10 @@ public final class ChunkServer {
         this.waitMoveSyncQueue.add(() -> {
             try {
                 final List<Runnable> asyncRunnable = new ArrayList<>();
-                final BranchNBT chunkNBT = this.branchMinecraft.fromChunk(world, chunk).toNBT(chunkLight, asyncRunnable);
-                // These runnables capture live chunk section data and must also run on the server thread.
+                final BranchNBT chunkNBT = this.branchMinecraft.fromChunk(world, chunk).toNBT(chunkLight,
+                        asyncRunnable);
+                // These runnables capture live chunk section data and must also run on the
+                // server thread.
                 asyncRunnable.forEach(Runnable::run);
                 syncNBT.complete(chunkNBT);
             } catch (final Throwable throwable) {
@@ -353,8 +356,10 @@ public final class ChunkServer {
                                 boolean playersFull = false;
                                 while (!playersFull && effectiveTime >= System.currentTimeMillis()) {
                                     playersFull = true;
-                                    for (final PlayerChunkView view : worldsViews.getOrDefault(world, new ArrayList<>(0))) {
-                                        if (this.serverNetworkTraffic.exceed(this.configData.getServerSendTickMaxBytes()))
+                                    for (final PlayerChunkView view : worldsViews.getOrDefault(world,
+                                            new ArrayList<>(0))) {
+                                        if (this.serverNetworkTraffic
+                                                .exceed(this.configData.getServerSendTickMaxBytes()))
                                             break handleServer;
                                         if (worldNetworkTraffic.exceed(configWorld.getWorldSendTickMaxBytes()))
                                             break handleWorld;
@@ -402,9 +407,11 @@ public final class ChunkServer {
                                                             final List<Runnable> asyncRunnable = new ArrayList<>();
                                                             final BranchChunkLight chunkLight = this.branchMinecraft
                                                                     .fromLight(world);
-                                                            final BranchNBT chunkNBT = chunk.toNBT(chunkLight, asyncRunnable);
+                                                            final BranchNBT chunkNBT = chunk.toNBT(chunkLight,
+                                                                    asyncRunnable);
                                                             asyncRunnable.forEach(Runnable::run);
-                                                            this.sendChunk(world, configWorld, worldNetworkTraffic, view,
+                                                            this.sendChunk(world, configWorld, worldNetworkTraffic,
+                                                                    view,
                                                                     chunkX, chunkZ, chunkNBT, chunkLight, syncKey,
                                                                     worldCumulativeReport, threadCumulativeReport);
                                                             break handlePlayer;
@@ -417,7 +424,8 @@ public final class ChunkServer {
                                                 }
 
                                                 try {
-                                                    final BranchNBT chunkNBT = this.branchMinecraft.getChunkNBTFromDisk(world,
+                                                    final BranchNBT chunkNBT = this.branchMinecraft.getChunkNBTFromDisk(
+                                                            world,
                                                             chunkX, chunkZ);
                                                     if (chunkNBT != null && this.branchMinecraft.fromStatus(chunkNBT)
                                                             .isAbove(BranchChunk.Status.FULL)) {
@@ -425,9 +433,11 @@ public final class ChunkServer {
                                                         worldCumulativeReport.increaseLoadFast();
                                                         view.cumulativeReport.increaseLoadFast();
                                                         threadCumulativeReport.increaseLoadFast();
-                                                        this.sendChunk(world, configWorld, worldNetworkTraffic, view, chunkX,
+                                                        this.sendChunk(world, configWorld, worldNetworkTraffic, view,
+                                                                chunkX,
                                                                 chunkZ, chunkNBT,
-                                                                this.branchMinecraft.fromLight(world, chunkNBT), syncKey,
+                                                                this.branchMinecraft.fromLight(world, chunkNBT),
+                                                                syncKey,
                                                                 worldCumulativeReport, threadCumulativeReport);
                                                         break handlePlayer;
                                                     }
@@ -449,7 +459,8 @@ public final class ChunkServer {
 
                                             try {
                                                 // paper
-                                                final Chunk chunk = world.getChunkAtAsync(chunkX, chunkZ, canGenerated, true)
+                                                final Chunk chunk = world
+                                                        .getChunkAtAsync(chunkX, chunkZ, canGenerated, true)
                                                         .get();
                                                 if (chunk != null) {
                                                     this.serverCumulativeReport.increaseLoadSlow();
@@ -457,9 +468,12 @@ public final class ChunkServer {
                                                     view.cumulativeReport.increaseLoadSlow();
                                                     threadCumulativeReport.increaseLoadSlow();
                                                     try {
-                                                        final BranchChunkLight chunkLight = this.branchMinecraft.fromLight(world);
-                                                        final BranchNBT chunkNBT = this.toNbtSync(world, chunk, chunkLight);
-                                                        this.sendChunk(world, configWorld, worldNetworkTraffic, view, chunkX,
+                                                        final BranchChunkLight chunkLight = this.branchMinecraft
+                                                                .fromLight(world);
+                                                        final BranchNBT chunkNBT = this.toNbtSync(world, chunk,
+                                                                chunkLight);
+                                                        this.sendChunk(world, configWorld, worldNetworkTraffic, view,
+                                                                chunkX,
                                                                 chunkZ, chunkNBT, chunkLight, syncKey,
                                                                 worldCumulativeReport, threadCumulativeReport);
                                                         break handlePlayer;
@@ -484,10 +498,14 @@ public final class ChunkServer {
                                                     view.cumulativeReport.increaseLoadSlow();
                                                     threadCumulativeReport.increaseLoadSlow();
                                                     try {
-                                                        final BranchChunkLight chunkLight = this.branchMinecraft.fromLight(world);
-                                                    final BranchNBT chunkNBT = this.toNbtSync(world, world.getChunkAt(chunkX,
-                                                        chunkZ), chunkLight);
-                                                        this.sendChunk(world, configWorld, worldNetworkTraffic, view, chunkX,
+                                                        final BranchChunkLight chunkLight = this.branchMinecraft
+                                                                .fromLight(world);
+                                                        final BranchNBT chunkNBT = this.toNbtSync(world,
+                                                                world.getChunkAt(chunkX,
+                                                                        chunkZ),
+                                                                chunkLight);
+                                                        this.sendChunk(world, configWorld, worldNetworkTraffic, view,
+                                                                chunkX,
                                                                 chunkZ, chunkNBT, chunkLight, syncKey,
                                                                 worldCumulativeReport, threadCumulativeReport);
                                                         break handlePlayer;
@@ -546,8 +564,10 @@ public final class ChunkServer {
      * @param worldCumulativeReport  Cumulative report for the world.
      * @param threadCumulativeReport Cumulative report for the thread.
      */
-    private void sendChunk(final World world, final ConfigData.World configWorld, final NetworkTraffic worldNetworkTraffic,
-            final PlayerChunkView view, final int chunkX, final int chunkZ, final BranchNBT chunkNBT, final BranchChunkLight chunkLight, final long syncKey,
+    private void sendChunk(final World world, final ConfigData.World configWorld,
+            final NetworkTraffic worldNetworkTraffic,
+            final PlayerChunkView view, final int chunkX, final int chunkZ, final BranchNBT chunkNBT,
+            final BranchChunkLight chunkLight, final long syncKey,
             final CumulativeReport worldCumulativeReport, final CumulativeReport threadCumulativeReport) {
         final BranchChunk chunk = this.branchMinecraft.fromChunk(world, chunkX, chunkZ, chunkNBT,
                 this.configData.calculateMissingHeightMap);
@@ -562,7 +582,8 @@ public final class ChunkServer {
         }
 
         final AtomicInteger consumeTraffic = new AtomicInteger(0);
-        final Consumer<Player> chunkAndLightPacket = this.branchPacket.sendChunkAndLight(view.getPlayer(), chunk, chunkLight,
+        final Consumer<Player> chunkAndLightPacket = this.branchPacket.sendChunkAndLight(view.getPlayer(), chunk,
+                chunkLight,
                 configWorld.sendTitleData, consumeTraffic::addAndGet);
 
         synchronized (view.networkSpeed) {
@@ -583,9 +604,10 @@ public final class ChunkServer {
             if (!this.running)
                 return;
 
-            final boolean needMeasure = this.configData.autoAdaptPlayerNetworkSpeed && ((view.networkSpeed.speedID == null
-                    && view.networkSpeed.speedTimestamp + 1000 <= System.currentTimeMillis())
-                    || view.networkSpeed.speedTimestamp + 30000 <= System.currentTimeMillis());
+            final boolean needMeasure = this.configData.autoAdaptPlayerNetworkSpeed
+                    && ((view.networkSpeed.speedID == null
+                            && view.networkSpeed.speedTimestamp + 1000 <= System.currentTimeMillis())
+                            || view.networkSpeed.speedTimestamp + 30000 <= System.currentTimeMillis());
             if (needMeasure) {
                 if (view.networkSpeed.speedID != null) {
                     view.networkSpeed.add(30000, 0);

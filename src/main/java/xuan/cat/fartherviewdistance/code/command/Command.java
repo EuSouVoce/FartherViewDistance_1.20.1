@@ -12,16 +12,16 @@ import xuan.cat.fartherviewdistance.code.data.CumulativeReport;
 
 public final class Command {
 
-    public static int reload(CommandContext<CommandSourceStack> context) {
-        CommandSourceStack source = context.getSource();
+    public static int reload(final CommandContext<CommandSourceStack> context) {
+        final CommandSourceStack source = context.getSource();
         try {
-            ConfigData configData = ChunkIndex.getConfigData();
+            final ConfigData configData = ChunkIndex.getConfigData();
             configData.reload();
             ChunkIndex.getChunkServer().reloadMultithreaded();
             source.getSender().sendMessage(Component.text(
                     ChunkIndex.getChunkServer().lang.get(source.getSender(),
                             "command.reread_configuration_successfully")));
-        } catch (Exception e) {
+        } catch (final Exception e) {
             e.printStackTrace();
             source.getSender().sendMessage(Component.text(
                     ChunkIndex.getChunkServer().lang.get(source.getSender(),
@@ -30,55 +30,55 @@ public final class Command {
         return 1;
     }
 
-    public static int reportServer(CommandContext<CommandSourceStack> context) {
-        CommandSourceStack source = context.getSource();
-        sendReportHead(source);
-        sendReportCumulative(source, "*SERVER", ChunkIndex.getChunkServer().serverCumulativeReport);
+    public static int reportServer(final CommandContext<CommandSourceStack> context) {
+        final CommandSourceStack source = context.getSource();
+        Command.sendReportHead(source);
+        Command.sendReportCumulative(source, "*SERVER", ChunkIndex.getChunkServer().serverCumulativeReport);
         return 1;
     }
 
-    public static int reportThread(CommandContext<CommandSourceStack> context) {
-        CommandSourceStack source = context.getSource();
-        sendReportHead(source);
+    public static int reportThread(final CommandContext<CommandSourceStack> context) {
+        final CommandSourceStack source = context.getSource();
+        Command.sendReportHead(source);
         ChunkIndex.getChunkServer().threadsCumulativeReport.forEach((threadNumber,
-                cumulativeReport) -> sendReportCumulative(source, "*THREAD#" + threadNumber, cumulativeReport));
+                cumulativeReport) -> Command.sendReportCumulative(source, "*THREAD#" + threadNumber, cumulativeReport));
         return 1;
     }
 
-    public static int reportWorld(CommandContext<CommandSourceStack> context) {
-        CommandSourceStack source = context.getSource();
-        sendReportHead(source);
+    public static int reportWorld(final CommandContext<CommandSourceStack> context) {
+        final CommandSourceStack source = context.getSource();
+        Command.sendReportHead(source);
         ChunkIndex.getChunkServer().worldsCumulativeReport
-                .forEach((world, cumulativeReport) -> sendReportCumulative(source, world.getName(), cumulativeReport));
+                .forEach((world, cumulativeReport) -> Command.sendReportCumulative(source, world.getName(), cumulativeReport));
         return 1;
     }
 
-    public static int reportPlayer(CommandContext<CommandSourceStack> context) {
-        CommandSourceStack source = context.getSource();
-        sendReportHead(source);
+    public static int reportPlayer(final CommandContext<CommandSourceStack> context) {
+        final CommandSourceStack source = context.getSource();
+        Command.sendReportHead(source);
         ChunkIndex.getChunkServer().playersViewMap
-                .forEach((player, view) -> sendReportCumulative(source, player.getName(), view.cumulativeReport));
+                .forEach((player, view) -> Command.sendReportCumulative(source, player.getName(), view.cumulativeReport));
         return 1;
     }
 
-    public static int start(CommandContext<CommandSourceStack> context) {
-        CommandSourceStack source = context.getSource();
+    public static int start(final CommandContext<CommandSourceStack> context) {
+        final CommandSourceStack source = context.getSource();
         ChunkIndex.getChunkServer().globalPause = false;
         source.getSender().sendMessage(Component.text(
                 ChunkIndex.getChunkServer().lang.get(source.getSender(), "command.continue_execution")));
         return 1;
     }
 
-    public static int stop(CommandContext<CommandSourceStack> context) {
-        CommandSourceStack source = context.getSource();
+    public static int stop(final CommandContext<CommandSourceStack> context) {
+        final CommandSourceStack source = context.getSource();
         ChunkIndex.getChunkServer().globalPause = true;
         source.getSender().sendMessage(Component.text(
                 ChunkIndex.getChunkServer().lang.get(source.getSender(), "command.suspension_execution")));
         return 1;
     }
 
-    public static int permissionCheck(CommandContext<CommandSourceStack> context, Player target) {
-        CommandSourceStack source = context.getSource();
+    public static int permissionCheck(final CommandContext<CommandSourceStack> context, final Player target) {
+        final CommandSourceStack source = context.getSource();
         if (target == null) {
             source.getSender().sendMessage(Component.text(
                     ChunkIndex.getChunkServer().lang.get(source.getSender(), "command.players_do_not_exist")));
@@ -91,8 +91,8 @@ public final class Command {
         return 1;
     }
 
-    public static int debugView(CommandContext<CommandSourceStack> context, Player target) {
-        CommandSourceStack source = context.getSource();
+    public static int debugView(final CommandContext<CommandSourceStack> context, final Player target) {
+        final CommandSourceStack source = context.getSource();
         if (target == null) {
             source.getSender().sendMessage(Component.text(
                     ChunkIndex.getChunkServer().lang.get(source.getSender(), "command.players_do_not_exist")));
@@ -103,8 +103,8 @@ public final class Command {
         return 1;
     }
 
-    public static void sendReportHead(CommandSourceStack source) {
-        String timeSegment = ChunkIndex.getChunkServer().lang.get(source.getSender(), "command.report.5s")
+    public static void sendReportHead(final CommandSourceStack source) {
+        final String timeSegment = ChunkIndex.getChunkServer().lang.get(source.getSender(), "command.report.5s")
                 + "/" + ChunkIndex.getChunkServer().lang.get(source.getSender(), "command.report.1m")
                 + "/" + ChunkIndex.getChunkServer().lang.get(source.getSender(), "command.report.5m");
         source.getSender().sendMessage(Component.text(
@@ -120,9 +120,9 @@ public final class Command {
                         + timeSegment));
     }
 
-    public static void sendReportCumulative(CommandSourceStack source, String sourceName,
-            CumulativeReport cumulativeReport) {
-        String message = sourceName + " | " +
+    public static void sendReportCumulative(final CommandSourceStack source, final String sourceName,
+            final CumulativeReport cumulativeReport) {
+        final String message = sourceName + " | " +
                 cumulativeReport.reportLoadFast5s() + "/" +
                 cumulativeReport.reportLoadFast1m() + "/" +
                 cumulativeReport.reportLoadFast5m() + " | " +

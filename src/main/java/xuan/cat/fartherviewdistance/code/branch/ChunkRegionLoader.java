@@ -414,9 +414,10 @@ public final class ChunkRegionLoader {
         // Biome parser
         final PalettedContainerFactory palettedContainerFactory = world.palettedContainerFactory();
 
-        final Codec<PalettedContainer<BlockState>> palleteBlockStatecodec = palettedContainerFactory.blockStatesContainerCodec();
+        final Codec<PalettedContainer<BlockState>> palleteBlockStatecodec = palettedContainerFactory
+                .blockStatesContainerCodec();
         final Codec<PalettedContainerRO<Holder<Biome>>> paletteCodec = palettedContainerFactory.biomeContainerCodec();
-        
+
         boolean lightCorrect = false;
 
         for (int locationY = lightEngine.getMinLightSection(); locationY < lightEngine
@@ -428,7 +429,6 @@ public final class ChunkRegionLoader {
 
             blockNibble = chunk.starlight$getBlockNibbles()[locationY - minSection].toVanillaNibble();
             skyNibble = chunk.starlight$getSkyNibbles()[locationY - minSection].toVanillaNibble();
-            
 
             if (inSections || blockNibble != null || skyNibble != null) {
                 final CompoundTag sectionNBT = new CompoundTag();
@@ -487,7 +487,7 @@ public final class ChunkRegionLoader {
         } catch (final Exception e) {
             // noop
         }
-        if(blockEntitiesPos != null && !blockEntitiesPos.isEmpty())
+        if (blockEntitiesPos != null && !blockEntitiesPos.isEmpty())
             for (final BlockPos blockPos : blockEntitiesPos) {
                 try {
                     final CompoundTag blockEntity = chunk.getBlockEntityNbtForSaving(blockPos, world.registryAccess());
