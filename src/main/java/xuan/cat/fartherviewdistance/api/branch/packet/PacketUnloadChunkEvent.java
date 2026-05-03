@@ -4,6 +4,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 
 import net.minecraft.world.level.ChunkPos;
+import xuan.cat.fartherviewdistance.code.branch.BranchNmsCompat;
 
 public final class PacketUnloadChunkEvent extends PacketEvent {
     private static final HandlerList handlers = new HandlerList();
@@ -27,7 +28,7 @@ public final class PacketUnloadChunkEvent extends PacketEvent {
     }
 
     public PacketUnloadChunkEvent(final Player player, final ChunkPos chunkPos) {
-        this(player, chunkPos.x, chunkPos.z);
+        this(player, BranchNmsCompat.chunkX(chunkPos), BranchNmsCompat.chunkZ(chunkPos));
     }
 
     public int getChunkX() {

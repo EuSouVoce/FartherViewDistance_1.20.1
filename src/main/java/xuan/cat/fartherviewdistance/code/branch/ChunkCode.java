@@ -96,8 +96,8 @@ public final class ChunkCode implements BranchChunk {
     @Override
     public BlockData getBlockData(final int x, final int y, final int z) {
         final BlockState blockData = this.getIBlockData(x, y, z);
-        return blockData != null ? CraftBlockData.fromData(blockData)
-                : CraftBlockData.fromData(Blocks.AIR.defaultBlockState());
+        return blockData != null ? CraftBlockData.createData(blockData)
+                : CraftBlockData.createData(Blocks.AIR.defaultBlockState());
     }
 
     @Override
@@ -130,12 +130,12 @@ public final class ChunkCode implements BranchChunk {
 
     @Override
     public int getX() {
-        return this.levelChunk.getPos().x;
+        return BranchNmsCompat.chunkX(this.levelChunk.getPos());
     }
 
     @Override
     public int getZ() {
-        return this.levelChunk.getPos().z;
+        return BranchNmsCompat.chunkZ(this.levelChunk.getPos());
     }
 
     private static Field field_LevelChunkSection_nonEmptyBlockCount;
@@ -224,7 +224,7 @@ public final class ChunkCode implements BranchChunk {
 
     @Override
     public void setBiome(final int x, final int y, final int z, final org.bukkit.block.Biome biome) {
-        this.levelChunk.setBiome(x, y, z, CraftBiome.bukkitToMinecraftHolder(biome));
+        BranchNmsCompat.setBiome(this.levelChunk, x, y, z, CraftBiome.bukkitToMinecraftHolder(biome));
     }
 
     @Override

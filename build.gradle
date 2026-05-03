@@ -1,13 +1,30 @@
 plugins {
     id("java")
-    id("io.papermc.paperweight.userdev").version("2.0.0-beta.17")
+    id("maven-publish")
+    id("io.papermc.paperweight.userdev").version("2.0.0-beta.21")
 }
 
 int defaultJavaVersion = 21
+String githubPackagesRepoUrl = "https://maven.pkg.github.com/EuSouVoce/FartherViewDistance_1.20.1"
+String minecraftVersion = properties.getOrDefault("minecraft_version", "1.21.11").toString()
+boolean skipBranchAutoBuild = providers.gradleProperty("skipBranchAutoBuild").map { it.toBoolean() }.orElse(false).get()
+boolean forceBranchPublish = providers.gradleProperty("branch.publish.force").map { it.toBoolean() }.orElse(false).get()
+int minimumJavaVersion = minecraftVersion.startsWith("26.") ? 25 : defaultJavaVersion
+int configuredJavaVersion = Math.max(
+        Integer.parseInt(properties.getOrDefault("java", defaultJavaVersion).toString()),
+        minimumJavaVersion)
+String paperDependencyVersion = properties.getOrDefault("paper_dependency_version",
+        minecraftVersion.startsWith("26.") ? "${minecraftVersion}.build.+" : "${minecraftVersion}-R0.1-SNAPSHOT").toString()
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(properties.getOrDefault("java", defaultJavaVersion).toString())
+        languageVersion = JavaLanguageVersion.of(configuredJavaVersion)
+    }
+}
+
+paperweight {
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(configuredJavaVersion)
     }
 }
 
@@ -26,10 +43,6 @@ repositories {
         url = uri("https://repo.extendedclip.com/releases/")
     }
     maven {
-        name = "imperiogames-public"
-        url = uri("https://repo.imperio.games/public/")
-    }
-    maven {
         name = "papermc"
         url = uri("https://repo.papermc.io/repository/maven-public/")
     }
@@ -40,8 +53,11 @@ repositories {
 }
 
 dependencies {
-    paperweight.paperDevBundle("${minecraft_version}-R0.1-SNAPSHOT")
-    compileOnly("io.papermc.paper:paper-api:${minecraft_version}-R0.1-SNAPSHOT")
+    paperweight.paperDevBundle(paperDependencyVersion)
+    compileOnly("io.papermc.paper:paper-api:${paperDependencyVersion}")
+    testImplementation(platform("org.junit:junit-bom:5.12.2"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
     compileOnly("me.clip:placeholderapi:2.11.6")
     compileOnly("com.mojang:datafixerupper:0.0.18")
@@ -53,7 +69,442 @@ dependencies {
 }
 
 processResources {
+    inputs.property("version", project.version)
     filesMatching('paper-plugin.yml') {
         expand(version: project.version)
     }
+}
+
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
+}
+
+def generatedBranchProviderDir = layout.buildDirectory.dir("generated/branch-providers/java")
+def generatedBranchServiceDir = layout.buildDirectory.dir("generated/branch-providers/services")
+
+def branchModules = [
+        [
+                taskName: "1_21_10",
+                minecraftVersion: "1.21.10",
+                requiresMinecraftVersion: "1.21.11",
+                branchVersion: "1.21.10.1000",
+                packageName: "xuan.cat.fartherviewdistance.branch.generated.v1_21_10",
+                className: "GeneratedBranchProvider_1_21_10"
+        ],
+        [
+                taskName: "1_21_11",
+                minecraftVersion: "1.21.11",
+                requiresMinecraftVersion: "1.21.11",
+                branchVersion: "1.21.11.1000",
+                packageName: "xuan.cat.fartherviewdistance.branch.generated.v1_21_11",
+                className: "GeneratedBranchProvider_1_21_11"
+        ],
+        [
+                taskName: "26_1_2",
+                minecraftVersion: "26.1.2",
+                requiresMinecraftVersion: "26.1.2",
+                branchVersion: "26.1.2.1000",
+                packageName: "xuan.cat.fartherviewdistance.branch.generated.v26_1_2",
+                className: "GeneratedBranchProvider_26_1_2"
+        ]
+]
+
+def compatibleBranchModules = branchModules.findAll { branch -> branch.requiresMinecraftVersion == minecraftVersion }
+def branchBuildVersions = branchModules.collect { it.requiresMinecraftVersion }.unique().sort()
+
+def paperDependencyForMinecraftVersion = { String version ->
+    return version.startsWith("26.") ? "${version}.build.+" : "${version}-R0.1-SNAPSHOT"
+}
+
+def javaVersionForMinecraftVersion = { String version ->
+    return version.startsWith("26.") ? 25 : defaultJavaVersion
+}
+
+def taskSuffixForMinecraftVersion = { String version ->
+    return version.replaceAll("[^A-Za-z0-9]", "_")
+            .split("_")
+            .findAll { !it.isBlank() }
+            .collect { it.capitalize() }
+            .join("")
+}
+
+def remoteArtifactUrl = { String repositoryUrl, String groupId, String artifactId, String version ->
+    String normalized = repositoryUrl.endsWith("/") ? repositoryUrl : repositoryUrl + "/"
+    return normalized + groupId.replace(".", "/") + "/" + artifactId + "/" + version + "/"
+            + artifactId + "-" + version + ".jar"
+}
+
+def remoteArtifactExists = { String artifactUrl, String user, String key ->
+    HttpURLConnection connection = null
+    try {
+        connection = (HttpURLConnection) new URL(artifactUrl).openConnection()
+        connection.setRequestMethod("HEAD")
+        connection.setConnectTimeout(3500)
+        connection.setReadTimeout(3500)
+        connection.setRequestProperty("User-Agent", "FartherViewDistance-Gradle-PublishCheck")
+        if (user?.trim() && key?.trim()) {
+            String basic = "${user}:${key}"
+            connection.setRequestProperty("Authorization", "Basic " + basic.bytes.encodeBase64().toString())
+        }
+        int status = connection.responseCode
+        return status >= 200 && status < 300
+    } catch (IOException ignored) {
+        return false
+    } finally {
+        connection?.disconnect()
+    }
+}
+
+def resolveMavenServerCredentials = { String settingsFilePath, String serverId ->
+    if (!(settingsFilePath?.trim()) || !(serverId?.trim())) {
+        return [username: "", password: "", loaded: false, source: ""]
+    }
+    File settingsFile = file(settingsFilePath)
+    if (!settingsFile.isFile()) {
+        return [username: "", password: "", loaded: false, source: settingsFile.absolutePath]
+    }
+    try {
+        def xml = new groovy.xml.XmlSlurper(false, true).parse(settingsFile)
+        def localName = { Object nodeName ->
+            if (nodeName == null) {
+                return ""
+            }
+            if (nodeName instanceof groovy.namespace.QName) {
+                return nodeName.localPart ?: ""
+            }
+            String asString = nodeName.toString()
+            if (asString.contains("}")) {
+                return asString.substring(asString.lastIndexOf("}") + 1)
+            }
+            if (asString.contains(":")) {
+                return asString.substring(asString.lastIndexOf(":") + 1)
+            }
+            return asString
+        }
+
+        def serverNodes = xml.'**'.findAll { localName(it.name()) == "server" }
+        def server = serverNodes.find {
+            def idNode = it.children().find { child -> localName(child.name()) == "id" }
+            return idNode?.text() == serverId
+        }
+        if (server == null) {
+            return [username: "", password: "", loaded: false, source: settingsFile.absolutePath]
+        }
+
+        def usernameNode = server.children().find { child -> localName(child.name()) == "username" }
+        def passwordNode = server.children().find { child -> localName(child.name()) == "password" }
+        return [
+                username: usernameNode?.text() ?: "",
+                password: passwordNode?.text() ?: "",
+                loaded  : true,
+                source  : settingsFile.absolutePath
+        ]
+    } catch (Exception ignored) {
+        return [username: "", password: "", loaded: false, source: settingsFile.absolutePath]
+    }
+}
+
+String mavenServerId = providers.gradleProperty("mavenServerId").orElse("").get()
+String mavenSettingsFilePath = providers.gradleProperty("maven.settings.file").orNull
+if (!(mavenSettingsFilePath?.trim())) {
+    mavenSettingsFilePath = System.getenv("MAVEN_SETTINGS_PATH")
+}
+if (!(mavenSettingsFilePath?.trim())) {
+    mavenSettingsFilePath = new File(System.getProperty("user.home"), ".m2/settings.xml").absolutePath
+}
+def mavenServerCredentials = resolveMavenServerCredentials(mavenSettingsFilePath, mavenServerId)
+String resolvedGprUser = providers.gradleProperty("gpr.user")
+        .orElse(mavenServerCredentials.username)
+        .orElse(System.getenv("GITHUB_ACTOR") ?: "")
+        .get()
+String resolvedGprKey = providers.gradleProperty("gpr.key")
+        .orElse(mavenServerCredentials.password)
+        .orElse(System.getenv("GITHUB_TOKEN") ?: "")
+        .get()
+
+if (mavenServerId && mavenServerCredentials.loaded) {
+    logger.lifecycle("Loaded Maven credentials from {} for server id '{}'", mavenServerCredentials.source, mavenServerId)
+} else if (mavenServerId && !providers.gradleProperty("gpr.user").present && !providers.gradleProperty("gpr.key").present) {
+    logger.warn("Maven server id '{}' not found or unreadable in {}. Falling back to gpr.user/gpr.key or environment variables.",
+            mavenServerId, mavenSettingsFilePath)
+}
+
+sourceSets {
+    branchProvider {
+        java.srcDir(generatedBranchProviderDir)
+        compileClasspath += sourceSets.main.output + configurations.compileClasspath
+        runtimeClasspath += output + compileClasspath
+    }
+}
+
+tasks.register("generateBranchProviders") {
+    outputs.dir(generatedBranchProviderDir)
+    outputs.dir(generatedBranchServiceDir)
+    doLast {
+        branchModules.each { branch ->
+            String providerClassName = "${branch.packageName}.${branch.className}"
+            File packageDirectory = generatedBranchProviderDir.get().file(branch.packageName.replace(".", "/")).asFile
+            packageDirectory.mkdirs()
+            new File(packageDirectory, "${branch.className}.java").text = """package ${branch.packageName};
+
+import xuan.cat.fartherviewdistance.api.branch.BranchMinecraft;
+import xuan.cat.fartherviewdistance.api.branch.BranchPacket;
+import xuan.cat.fartherviewdistance.code.branch.BranchProvider;
+
+public final class ${branch.className} implements BranchProvider {
+    @Override
+    public String id() {
+        return "external-${branch.minecraftVersion}";
+    }
+
+    @Override
+    public String branchVersion() {
+        return "${branch.branchVersion}";
+    }
+
+    @Override
+    public boolean supportsMinecraftVersion(final String minecraftVersion) {
+        return "${branch.minecraftVersion}".equals(minecraftVersion);
+    }
+
+    @Override
+    public BranchMinecraft createMinecraft() {
+        return new xuan.cat.fartherviewdistance.code.branch.MinecraftCode();
+    }
+
+    @Override
+    public BranchPacket createPacket() {
+        return new xuan.cat.fartherviewdistance.code.branch.PacketCode();
+    }
+}
+"""
+            File serviceDirectory = generatedBranchServiceDir.get().dir(branch.taskName).dir("META-INF/services").asFile
+            serviceDirectory.mkdirs()
+            new File(serviceDirectory, "xuan.cat.fartherviewdistance.code.branch.BranchProvider").text = providerClassName + System.lineSeparator()
+        }
+    }
+}
+
+tasks.named("compileBranchProviderJava") {
+    dependsOn("generateBranchProviders")
+}
+
+branchModules.each { branch ->
+    String capitalizedTaskName = branch.taskName.split("_").collect { it.capitalize() }.join("")
+    tasks.register("branchJar${capitalizedTaskName}", Jar) {
+        dependsOn("compileBranchProviderJava")
+        doFirst {
+            if (branch.requiresMinecraftVersion != minecraftVersion) {
+                throw new GradleException("Branch ${branch.minecraftVersion} must be built with "
+                        + "-Pminecraft_version=${branch.requiresMinecraftVersion}; current minecraft_version="
+                        + minecraftVersion)
+            }
+        }
+        archiveBaseName = "fartherviewdistance-branch-${branch.minecraftVersion}"
+        archiveVersion = branch.branchVersion
+        from(sourceSets.branchProvider.output) {
+            include branch.packageName.replace(".", "/") + "/**"
+        }
+        from(sourceSets.main.output) {
+            include "xuan/cat/fartherviewdistance/code/branch/**"
+            exclude "xuan/cat/fartherviewdistance/code/branch/BranchPluginLoader*"
+            exclude "xuan/cat/fartherviewdistance/code/branch/BranchProvider*"
+            exclude "xuan/cat/fartherviewdistance/code/branch/BranchResolver*"
+            exclude "xuan/cat/fartherviewdistance/code/branch/BranchVersionCache*"
+            exclude "xuan/cat/fartherviewdistance/code/branch/BuiltInBranchProvider*"
+        }
+        from(generatedBranchServiceDir.map { it.dir(branch.taskName) })
+    }
+}
+
+tasks.named("jar") {
+    if (!skipBranchAutoBuild) {
+        finalizedBy("branchJars")
+    }
+}
+
+publishing {
+    publications {
+        branchModules.each { branch ->
+            String capitalizedTaskName = branch.taskName.split("_").collect { it.capitalize() }.join("")
+            create("branch${capitalizedTaskName}", MavenPublication) {
+                groupId = "xuan.cat.fartherviewdistance"
+                artifactId = "fartherviewdistance-branch-${branch.minecraftVersion}"
+                version = branch.branchVersion
+                artifact(tasks.named("branchJar${capitalizedTaskName}"))
+            }
+        }
+    }
+    repositories {
+        maven {
+            name = "localBranchRepo"
+            url = layout.buildDirectory.dir("branch-repo")
+        }
+        maven {
+            name = "GitHubPackages"
+            url = uri(providers.gradleProperty("gpr.repoUrl").orElse(githubPackagesRepoUrl).get())
+            credentials {
+                username = resolvedGprUser
+                password = resolvedGprKey
+            }
+        }
+    }
+}
+
+branchBuildVersions.each { version ->
+    String suffix = taskSuffixForMinecraftVersion(version)
+    tasks.register("branchJarsForMinecraft${suffix}", GradleBuild) {
+        group = "branch"
+        description = "Builds branch jars that require Minecraft ${version}."
+        buildName = "branch-jars-${version}"
+        dir = projectDir
+        tasks = ["branchJars"]
+        startParameter.projectCacheDir = file(".gradle-branch/${version}")
+        startParameter.projectProperties = [
+                "skipBranchAutoBuild": "true",
+                "minecraft_version": version,
+                "paper_dependency_version": paperDependencyForMinecraftVersion(version),
+                "java": javaVersionForMinecraftVersion(version).toString()
+        ]
+    }
+
+    tasks.register("publishBranchModulesToLocalForMinecraft${suffix}", GradleBuild) {
+        group = "publishing"
+        description = "Publishes branch modules that require Minecraft ${version} to the local branch repo."
+        buildName = "publish-local-branch-${version}"
+        dir = projectDir
+        tasks = ["publishBranchModulesToLocal"]
+        startParameter.projectCacheDir = file(".gradle-branch/${version}")
+        startParameter.projectProperties = [
+                "skipBranchAutoBuild": "true",
+                "minecraft_version": version,
+                "paper_dependency_version": paperDependencyForMinecraftVersion(version),
+                "java": javaVersionForMinecraftVersion(version).toString(),
+                "branch.publish.force": forceBranchPublish.toString()
+        ]
+    }
+
+    tasks.register("publishBranchModulesToGitHubForMinecraft${suffix}", GradleBuild) {
+        group = "publishing"
+        description = "Publishes branch modules that require Minecraft ${version} to the configured Maven repo."
+        buildName = "publish-remote-branch-${version}"
+        dir = projectDir
+        tasks = ["publishBranchModulesToGitHub"]
+        startParameter.projectCacheDir = file(".gradle-branch/${version}")
+        startParameter.projectProperties = [
+                "skipBranchAutoBuild": "true",
+                "minecraft_version": version,
+                "paper_dependency_version": paperDependencyForMinecraftVersion(version),
+                "java": javaVersionForMinecraftVersion(version).toString(),
+                "branch.publish.force": forceBranchPublish.toString()
+        ]
+        if (providers.gradleProperty("gpr.repoUrl").present) {
+            startParameter.projectProperties["gpr.repoUrl"] = providers.gradleProperty("gpr.repoUrl").get()
+        }
+        if (providers.gradleProperty("gpr.user").present) {
+            startParameter.projectProperties["gpr.user"] = providers.gradleProperty("gpr.user").get()
+        }
+        if (providers.gradleProperty("gpr.key").present) {
+            startParameter.projectProperties["gpr.key"] = providers.gradleProperty("gpr.key").get()
+        }
+        if (providers.gradleProperty("mavenServerId").present) {
+            startParameter.projectProperties["mavenServerId"] = providers.gradleProperty("mavenServerId").get()
+        }
+        if (providers.gradleProperty("maven.settings.file").present) {
+            startParameter.projectProperties["maven.settings.file"] = providers.gradleProperty("maven.settings.file").get()
+        }
+    }
+}
+
+tasks.register("branchJars") {
+    if (skipBranchAutoBuild) {
+        dependsOn(compatibleBranchModules.collect { branch ->
+            String capitalizedTaskName = branch.taskName.split("_").collect { it.capitalize() }.join("")
+            tasks.named("branchJar${capitalizedTaskName}")
+        })
+    } else {
+        dependsOn(branchBuildVersions.collect { version ->
+            tasks.named("branchJarsForMinecraft${taskSuffixForMinecraftVersion(version)}")
+        })
+    }
+}
+
+tasks.register("publishBranchModulesToLocal") {
+    if (skipBranchAutoBuild) {
+        dependsOn(compatibleBranchModules.collect { branch ->
+            String capitalizedTaskName = branch.taskName.split("_").collect { it.capitalize() }.join("")
+            tasks.named("publishBranch${capitalizedTaskName}PublicationToLocalBranchRepoRepository")
+        })
+    } else {
+        dependsOn(branchBuildVersions.collect { version ->
+            tasks.named("publishBranchModulesToLocalForMinecraft${taskSuffixForMinecraftVersion(version)}")
+        })
+    }
+}
+
+tasks.register("publishBranchModulesToGitHub") {
+    if (skipBranchAutoBuild) {
+        dependsOn(compatibleBranchModules.collect { branch ->
+            String capitalizedTaskName = branch.taskName.split("_").collect { it.capitalize() }.join("")
+            tasks.named("publishBranch${capitalizedTaskName}PublicationToGitHubPackagesRepository")
+        })
+    } else {
+        dependsOn(branchBuildVersions.collect { version ->
+            tasks.named("publishBranchModulesToGitHubForMinecraft${taskSuffixForMinecraftVersion(version)}")
+        })
+    }
+}
+
+compatibleBranchModules.each { branch ->
+    String capitalizedTaskName = branch.taskName.split("_").collect { it.capitalize() }.join("")
+    tasks.named("publishBranch${capitalizedTaskName}PublicationToLocalBranchRepoRepository") {
+        onlyIf {
+            if (forceBranchPublish) {
+                return true
+            }
+            def artifactPath = layout.buildDirectory.dir("branch-repo").get().asFile.toPath()
+                    .resolve("xuan/cat/fartherviewdistance")
+                    .resolve("fartherviewdistance-branch-${branch.minecraftVersion}")
+                    .resolve(branch.branchVersion)
+                    .resolve("fartherviewdistance-branch-${branch.minecraftVersion}-${branch.branchVersion}.jar")
+            boolean exists = artifactPath.toFile().isFile()
+            if (exists) {
+                logger.lifecycle("Skipping already published local branch artifact {}", artifactPath)
+            }
+            return !exists
+        }
+    }
+
+    tasks.named("publishBranch${capitalizedTaskName}PublicationToGitHubPackagesRepository") {
+        onlyIf {
+            if (forceBranchPublish) {
+                return true
+            }
+            String repositoryUrl = providers.gradleProperty("gpr.repoUrl").orElse(githubPackagesRepoUrl).get()
+            String user = resolvedGprUser
+            String key = resolvedGprKey
+            String artifactId = "fartherviewdistance-branch-${branch.minecraftVersion}"
+            String artifactUrl = remoteArtifactUrl(repositoryUrl, "xuan.cat.fartherviewdistance", artifactId,
+                    branch.branchVersion)
+            boolean exists = remoteArtifactExists(artifactUrl, user, key)
+            if (exists) {
+                logger.lifecycle("Skipping already published remote branch artifact {}", artifactUrl)
+            }
+            return !exists
+        }
+    }
+}
+
+tasks.register("publishBranchModulesForCurrentMinecraftToLocal") {
+    dependsOn(compatibleBranchModules.collect { branch ->
+        String capitalizedTaskName = branch.taskName.split("_").collect { it.capitalize() }.join("")
+        tasks.named("publishBranch${capitalizedTaskName}PublicationToLocalBranchRepoRepository")
+    })
+}
+
+tasks.register("publishBranchModulesForCurrentMinecraftToGitHub") {
+    dependsOn(compatibleBranchModules.collect { branch ->
+        String capitalizedTaskName = branch.taskName.split("_").collect { it.capitalize() }.join("")
+        tasks.named("publishBranch${capitalizedTaskName}PublicationToGitHubPackagesRepository")
+    })
 }

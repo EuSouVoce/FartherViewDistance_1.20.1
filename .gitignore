@@ -7,3 +7,6 @@
 build/
 .gradle/
 bin/
+.gradle-sandbox/
+.gradle-branch/
+memo-*.md

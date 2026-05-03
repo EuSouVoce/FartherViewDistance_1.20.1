@@ -1,0 +1,38 @@
+name: Validate Branch Modules
+
+on:
+  pull_request:
+    paths:
+      - 'build.gradle'
+      - 'gradle.properties'
+      - 'src/main/java/xuan/cat/fartherviewdistance/code/branch/**'
+      - 'src/main/resources/META-INF/services/**'
+      - '.github/workflows/validate-branch-module.yml'
+      - '.github/workflows/publish-branch-module.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21 and 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: |
+            21
+            25
+          cache: gradle
+
+      - name: Build core and generated branch jars
+        run: ./gradlew --no-daemon clean jar
+
+      - name: Run tests
+        run: ./gradlew --no-daemon test -Pminecraft_version=26.1.2 -Ppaper_dependency_version=26.1.2.build.+ -Pjava=25

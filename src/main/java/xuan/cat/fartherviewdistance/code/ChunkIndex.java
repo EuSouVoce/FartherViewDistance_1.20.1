@@ -13,16 +13,16 @@ import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import net.minecraft.commands.arguments.EntityArgument;
+
+import java.nio.file.Path;
+
 import xuan.cat.fartherviewdistance.api.branch.BranchMinecraft;
 import xuan.cat.fartherviewdistance.api.branch.BranchPacket;
-import xuan.cat.fartherviewdistance.code.branch.MinecraftCode;
-import xuan.cat.fartherviewdistance.code.branch.PacketCode;
+import xuan.cat.fartherviewdistance.code.branch.BranchResolver;
 import xuan.cat.fartherviewdistance.code.command.Command;
 import xuan.cat.fartherviewdistance.code.data.ConfigData;
 import xuan.cat.fartherviewdistance.code.data.viewmap.ViewShape;
 import xuan.cat.fartherviewdistance.code.metrics.MetricsCollector;
-
-import java.util.Set;
 
 public final class ChunkIndex extends JavaPlugin {
     // private static ProtocolManager protocolManager;
@@ -31,7 +31,6 @@ public final class ChunkIndex extends JavaPlugin {
     private static ConfigData configData;
     private static BranchPacket branchPacket;
     private static BranchMinecraft branchMinecraft;
-    private static final Set<String> SUPPORTED = Set.of("1.21.10", "1.21.11");
 
     @Override
     public void onEnable() {
@@ -43,15 +42,25 @@ public final class ChunkIndex extends JavaPlugin {
 
         final String bukkitVersion = Bukkit.getBukkitVersion();
         final String minecraftVersion = Bukkit.getMinecraftVersion();
+        final String branchLibraryDirectory = this.getConfig().getString("branch-autoload.library-directory",
+                "plugins/FartherViewDistance/branch-libraries");
 
-        if (ChunkIndex.SUPPORTED.contains(minecraftVersion)) {
-            ChunkIndex.branchPacket = new PacketCode();
-            ChunkIndex.branchMinecraft = new MinecraftCode();
+        final BranchResolver.SelectedBranch selectedBranch = BranchResolver
+                .resolve(minecraftVersion, this.getLogger(), this.getClass().getClassLoader(),
+                        Path.of(branchLibraryDirectory))
+                .orElse(null);
+
+        if (selectedBranch != null) {
+            ChunkIndex.branchPacket = selectedBranch.packet();
+            ChunkIndex.branchMinecraft = selectedBranch.minecraft();
             ChunkIndex.chunkServer = new ChunkServer(ChunkIndex.configData, this, ViewShape.ROUND,
                     ChunkIndex.branchMinecraft, ChunkIndex.branchPacket);
+            this.getLogger().info("Loaded branch provider " + selectedBranch.provider().id() + " for Minecraft "
+                    + minecraftVersion + " (branch " + selectedBranch.provider().branchVersion() + ")");
         } else {
             this.getLogger().warning(
-                    "Unsupported Version, for versions < 1.21.4 downgrade to 9.9.2, for versions > 1.21.4 download the corresponding version");
+                    "No compatible branch provider found for Minecraft " + minecraftVersion
+                            + ". Install a branch extension or update the plugin core.");
             this.getServer().getPluginManager().disablePlugin(this);
             throw new IllegalArgumentException(
                     "Unsupported MC version: " + minecraftVersion + " Bukkit Version:" + bukkitVersion);

@@ -1,6 +1,8 @@
 name: FartherViewDistance
 version: $version
 main: xuan.cat.fartherviewdistance.code.ChunkIndex
+loader: xuan.cat.fartherviewdistance.code.branch.BranchPluginLoader
+has-open-classloader: true
 api-version: "1.21"
 authors: [xuancat0208, EuSouVoce, Lumine1909, Mapacheee just_lofe]
 dependencies:

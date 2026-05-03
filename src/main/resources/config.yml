@@ -73,6 +73,30 @@ calculate-missing-height-map: false
 #   Load once for each sent
 disable-fast-process: false
 
+# Bootstrap branch modules before the plugin enables.
+# This lets one stable core load newer Minecraft/Paper NMS support from a Maven repository.
+branch-autoload:
+  # Set to false to opt out and use only the branch providers inside this plugin jar.
+  enable: true
+
+  # Leave empty to detect the Minecraft version from Paper.
+  minecraft-version: ""
+
+  # Use only the cached branch version. Useful during maintenance.
+  offline: false
+
+  connect-timeout-millis: 3500
+  read-timeout-millis: 3500
+
+  # Downloaded external branch jars are cached here before they are added to the plugin classpath.
+  library-directory: "plugins/FartherViewDistance/branch-libraries"
+
+  cache:
+    enable: true
+    directory: "plugins/FartherViewDistance/branch-cache"
+    ttl-seconds: 21600
+    force-refresh: false
+
 # 獨立的世界配置
 # Independent world configuration
 worlds:
