@@ -180,7 +180,7 @@ public final class ChunkRegionLoader {
                     chunk.setBlockEntityNbt(entityNBT);
                 } else {
                     final BlockPos blockposition = ChunkRegionLoader.getPosFromTag(chunkPos, nbt);
-                    if (blockposition.getX() >> 4 == chunkPos.x && blockposition.getZ() >> 4 == chunkPos.z) {
+                    if (blockposition.getX() >> 4 == chunkPos.x() && blockposition.getZ() >> 4 == chunkPos.z()) {
                         final BlockEntity tileentity = ChunkRegionLoader.loadStatic(blockposition,
                                 chunk.getBlockState(blockposition), nbt, world.registryAccess());
                         if (tileentity != null) {
@@ -301,7 +301,7 @@ public final class ChunkRegionLoader {
         if (chunkPos != null) {
             final int sectionPosCoord = SectionPos.blockToSectionCoord(intOr);
             final int sectionPosCoord1 = SectionPos.blockToSectionCoord(intOr2);
-            if (sectionPosCoord != chunkPos.x || sectionPosCoord1 != chunkPos.z) {
+            if (sectionPosCoord != chunkPos.x() || sectionPosCoord1 != chunkPos.z()) {
                 intOr = chunkPos.getBlockX(SectionPos.sectionRelative(intOr));
                 intOr2 = chunkPos.getBlockZ(SectionPos.sectionRelative(intOr2));
             }
@@ -389,9 +389,9 @@ public final class ChunkRegionLoader {
         final int minSection = world.getMinSectionY() - 1;// WorldUtil.getMinLightSection();
         final ChunkPos chunkPos = chunk.getPos();
         final CompoundTag nbt = NbtUtils.addCurrentDataVersion(new CompoundTag());
-        nbt.putInt("xPos", chunkPos.x);
+        nbt.putInt("xPos", chunkPos.x());
         nbt.putInt("yPos", chunk.getMinSectionY());
-        nbt.putInt("zPos", chunkPos.z);
+        nbt.putInt("zPos", chunkPos.z());
         nbt.putLong("LastUpdate", world.getGameTime());
         nbt.putLong("InhabitedTime", chunk.getInhabitedTime());
         nbt.putString("Status", chunk.getPersistedStatus().getName());

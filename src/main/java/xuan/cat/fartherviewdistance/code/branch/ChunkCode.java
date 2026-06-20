@@ -76,7 +76,7 @@ public final class ChunkCode implements BranchChunk {
 
             if (chunkSection == null) {
                 chunkSection = chunkSections[indexY] = new LevelChunkSection(
-                        this.levelChunk.level.palettedContainerFactory(), this.levelChunk.getLevel(),
+                        this.levelChunk.getLevel().palettedContainerFactory(), this.levelChunk.getLevel(),
                         new ChunkPos(this.levelChunk.locX, this.levelChunk.locZ), indexY);
             }
             chunkSection.setBlockState(x & 15, y & 15, z & 15, iBlockData, false);
@@ -96,8 +96,8 @@ public final class ChunkCode implements BranchChunk {
     @Override
     public BlockData getBlockData(final int x, final int y, final int z) {
         final BlockState blockData = this.getIBlockData(x, y, z);
-        return blockData != null ? CraftBlockData.fromData(blockData)
-                : CraftBlockData.fromData(Blocks.AIR.defaultBlockState());
+        return blockData != null ? CraftBlockData.createData(blockData)
+                : CraftBlockData.createData(Blocks.AIR.defaultBlockState());
     }
 
     @Override
@@ -130,12 +130,12 @@ public final class ChunkCode implements BranchChunk {
 
     @Override
     public int getX() {
-        return this.levelChunk.getPos().x;
+        return this.levelChunk.getPos().x();
     }
 
     @Override
     public int getZ() {
-        return this.levelChunk.getPos().z;
+        return this.levelChunk.getPos().z();
     }
 
     private static Field field_LevelChunkSection_nonEmptyBlockCount;
@@ -224,7 +224,7 @@ public final class ChunkCode implements BranchChunk {
 
     @Override
     public void setBiome(final int x, final int y, final int z, final org.bukkit.block.Biome biome) {
-        this.levelChunk.setBiome(x, y, z, CraftBiome.bukkitToMinecraftHolder(biome));
+        this.levelChunk.setNoiseBiome(x, y, z, CraftBiome.bukkitToMinecraftHolder(biome));
     }
 
     @Override
