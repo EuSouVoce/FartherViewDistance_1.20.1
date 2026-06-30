@@ -14,6 +14,10 @@ java {
 repositories {
     mavenCentral()
     maven {
+        name = "papermc"
+        url = uri("https://repo.papermc.io/repository/maven-public/")
+    }
+    maven {
         name = "codemc"
         url = uri("https://repo.codemc.org/repository/maven-public/")
     }
@@ -28,10 +32,6 @@ repositories {
     maven {
         name = "imperiogames-public"
         url = uri("https://repo.imperio.games/public/")
-    }
-    maven {
-        name = "papermc"
-        url = uri("https://repo.papermc.io/repository/maven-public/")
     }
     maven {
         name = "minecraft-libraries"
