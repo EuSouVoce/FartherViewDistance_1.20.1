@@ -45,7 +45,7 @@ public final class PacketCode implements BranchPacket {
                     new LightChunkGetter() {
                         @Override
                         public LightChunk getChunkForLighting(final int chunkX, final int chunkZ) {
-                            return level.chunkSource.getChunkForLighting(chunkX, chunkZ);
+                            return level.getChunkSource().getChunkForLighting(chunkX, chunkZ);
                         }
 
                         @Override
@@ -100,7 +100,7 @@ public final class PacketCode implements BranchPacket {
         final LevelChunk levelChunk = ((ChunkCode) chunk).getLevelChunk();
         final ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
         final ClientboundLevelChunkWithLightPacket packet = new ClientboundLevelChunkWithLightPacket(levelChunk,
-                new NoOpLightEngine(levelChunk.level /*
+                new NoOpLightEngine((ServerLevel) levelChunk.getLevel() /*
                                                       * the same as serverPlayer.serverLevel()
                                                       * or levelChunk.getLevel().getMinecraftWorld()
                                                       */), null, null,

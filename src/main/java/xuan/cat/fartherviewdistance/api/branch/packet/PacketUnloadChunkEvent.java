@@ -27,7 +27,7 @@ public final class PacketUnloadChunkEvent extends PacketEvent {
     }
 
     public PacketUnloadChunkEvent(final Player player, final ChunkPos chunkPos) {
-        this(player, chunkPos.x, chunkPos.z);
+        this(player, chunkPos.x(), chunkPos.z());
     }
 
     public int getChunkX() {

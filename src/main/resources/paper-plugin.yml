@@ -1,7 +1,7 @@
 name: FartherViewDistance
 version: $version
 main: xuan.cat.fartherviewdistance.code.ChunkIndex
-api-version: "1.21"
+api-version: "26.1"
 authors: [xuancat0208, EuSouVoce, Lumine1909, Mapacheee just_lofe]
 dependencies:
   server:

@@ -1,9 +1,9 @@
 plugins {
     id("java")
-    id("io.papermc.paperweight.userdev").version("2.0.0-beta.17")
+    id("io.papermc.paperweight.userdev").version("2.0.0-beta.21")
 }
 
-int defaultJavaVersion = 21
+int defaultJavaVersion = 25
 
 java {
     toolchain {
@@ -40,11 +40,11 @@ repositories {
 }
 
 dependencies {
-    paperweight.paperDevBundle("${minecraft_version}-R0.1-SNAPSHOT")
-    compileOnly("io.papermc.paper:paper-api:${minecraft_version}-R0.1-SNAPSHOT")
+    paperweight.paperDevBundle("${paper_version}")
+    compileOnly("io.papermc.paper:paper-api:${paper_version}")
 
-    compileOnly("me.clip:placeholderapi:2.11.6")
-    compileOnly("com.mojang:datafixerupper:0.0.18")
+    compileOnly("me.clip:placeholderapi:2.12.2")
+    compileOnly("com.mojang:datafixerupper:8.0.16")
     compileOnly("io.netty:netty-transport:${netty_version}")
     compileOnly("io.netty:netty-common:${netty_version}")
     compileOnly("io.netty:netty-buffer:${netty_version}")
