@@ -18,6 +18,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
+import io.papermc.paper.threadedregions.scheduler.AsyncScheduler;
+import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
@@ -57,7 +59,10 @@ public final class ChunkServer {
     private boolean running = true;
     public final BranchMinecraft branchMinecraft;
     public final BranchPacket branchPacket;
+    public final boolean folia;
+
     private final Set<BukkitTask> bukkitTasks = ConcurrentHashMap.newKeySet();
+    private final Set<ScheduledTask> foliaTasks = ConcurrentHashMap.newKeySet();
 
     public static final Random random = new Random(); // SyncKey
     private ScheduledExecutorService multithreadedService;
@@ -88,25 +93,37 @@ public final class ChunkServer {
      * Sets up scheduled tasks for synchronous and asynchronous operations.
      */
     public ChunkServer(final ConfigData configData, final Plugin plugin, final ViewShape viewShape,
-            final BranchMinecraft branchMinecraft,
-            final BranchPacket branchPacket) {
+                       final BranchMinecraft branchMinecraft,
+                       final BranchPacket branchPacket,
+                       final boolean folia) {
         this.configData = configData;
         this.plugin = plugin;
         this.branchMinecraft = branchMinecraft;
         this.branchPacket = branchPacket;
+        this.folia = folia;
         this.viewShape = viewShape;
 
-        final BukkitScheduler scheduler = Bukkit.getScheduler();
-        this.bukkitTasks.add(scheduler.runTaskTimer(plugin, this::tickSync, 0, 1));
-        this.bukkitTasks.add(scheduler.runTaskTimerAsynchronously(plugin, this::tickAsync, 0, 1));
-        this.bukkitTasks.add(scheduler.runTaskTimerAsynchronously(plugin, this::tickReport, 0, 20));
+        if(folia) {
+            this.foliaTasks.add(Bukkit.getGlobalRegionScheduler().runAtFixedRate(plugin, _ -> tickSync(), 1, 1));
+
+            final AsyncScheduler asyncScheduler = Bukkit.getAsyncScheduler();
+            this.foliaTasks.add(asyncScheduler.runAtFixedRate(plugin, _ -> tickAsync(), 50, 50, TimeUnit.MILLISECONDS)); // one tick
+            this.foliaTasks.add(asyncScheduler.runAtFixedRate(plugin, _ -> tickReport(), 1, 1, TimeUnit.SECONDS)); // twenty ticks
+        }
+        else {
+            final BukkitScheduler scheduler = Bukkit.getScheduler();
+            this.bukkitTasks.add(scheduler.runTaskTimer(plugin, this::tickSync, 0, 1));
+            this.bukkitTasks.add(scheduler.runTaskTimerAsynchronously(plugin, this::tickAsync, 0, 1));
+            this.bukkitTasks.add(scheduler.runTaskTimerAsynchronously(plugin, this::tickReport, 0, 20));
+        }
+
         this.reloadMultithreaded();
     }
 
     /**
      * Initializes a PlayerChunkView for a given player and stores it in the
      * playersViewMap.
-     * 
+     *
      * @param player The player for whom the view is being initialized.
      * @return The initialized PlayerChunkView.
      */
@@ -213,7 +230,8 @@ public final class ChunkServer {
         this.waitMoveSyncQueue.removeIf(runnable -> {
             try {
                 runnable.run();
-            } catch (final Exception exception) {
+            }
+            catch (final Exception exception) {
                 exception.printStackTrace();
             }
             return true;
@@ -236,6 +254,20 @@ public final class ChunkServer {
         this.worldsGeneratedChunk.values().forEach(generatedChunk -> generatedChunk.set(0));
     }
 
+    private void fetchNbt(final CompletableFuture<BranchNBT> future, final World world, final Chunk chunk, final BranchChunkLight chunkLight) {
+        try {
+            final List<Runnable> asyncRunnable = new ArrayList<>();
+            final BranchNBT chunkNBT = this.branchMinecraft.fromChunk(world, chunk).toNBT(chunkLight, asyncRunnable);
+            // These runnables capture live chunk section data and must also run on the
+            // server thread.
+            asyncRunnable.forEach(Runnable::run);
+            future.complete(chunkNBT);
+        }
+        catch (final Throwable throwable) {
+            future.completeExceptionally(throwable);
+        }
+    }
+
     /**
      * Serializes a live chunk on the server thread to avoid async access to mutable
      * NMS chunk internals.
@@ -244,17 +276,14 @@ public final class ChunkServer {
             throws InterruptedException, ExecutionException {
         final CompletableFuture<BranchNBT> syncNBT = new CompletableFuture<>();
         this.waitMoveSyncQueue.add(() -> {
-            try {
-                final List<Runnable> asyncRunnable = new ArrayList<>();
-                final BranchNBT chunkNBT = this.branchMinecraft.fromChunk(world, chunk).toNBT(chunkLight,
-                        asyncRunnable);
-                // These runnables capture live chunk section data and must also run on the
-                // server thread.
-                asyncRunnable.forEach(Runnable::run);
-                syncNBT.complete(chunkNBT);
-            } catch (final Throwable throwable) {
-                syncNBT.completeExceptionally(throwable);
+            if(folia) {
+                Bukkit.getRegionScheduler().run(plugin, new Location(world, (chunk.getX() << 4) + 8, 0, (chunk.getZ() << 4) + 8), _ -> fetchNbt(
+                        syncNBT, world, chunk, chunkLight
+                ));
+                return;
             }
+
+            fetchNbt(syncNBT, world, chunk, chunkLight);
         });
         return syncNBT.get();
     }
@@ -694,6 +723,8 @@ public final class ChunkServer {
     void close() {
         this.running = false;
         for (final BukkitTask task : this.bukkitTasks)
+            task.cancel();
+        for (final ScheduledTask task : foliaTasks)
             task.cancel();
         this.multithreadedService.shutdown();
     }
