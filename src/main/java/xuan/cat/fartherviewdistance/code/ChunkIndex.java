@@ -32,6 +32,7 @@ public final class ChunkIndex extends JavaPlugin {
     private static BranchPacket branchPacket;
     private static BranchMinecraft branchMinecraft;
     private static final Set<String> SUPPORTED = Set.of("26.1", "26.1.1", "26.1.2", "26.2");
+    private static boolean folia;
 
     @Override
     public void onEnable() {
@@ -45,10 +46,20 @@ public final class ChunkIndex extends JavaPlugin {
         final String minecraftVersion = Bukkit.getMinecraftVersion();
 
         if (ChunkIndex.SUPPORTED.contains(minecraftVersion)) {
+            // https://docs.papermc.io/paper/dev/folia-support/#checking-for-folia
+            try {
+                Class.forName("io.papermc.paper.threadedregions.RegionizedServer");
+                ChunkIndex.folia = true;
+            }
+            catch (ClassNotFoundException _) {
+                ChunkIndex.folia = false;
+            }
+
             ChunkIndex.branchPacket = new PacketCode();
             ChunkIndex.branchMinecraft = new MinecraftCode();
             ChunkIndex.chunkServer = new ChunkServer(ChunkIndex.configData, this, ViewShape.ROUND,
-                    ChunkIndex.branchMinecraft, ChunkIndex.branchPacket);
+                    ChunkIndex.branchMinecraft, ChunkIndex.branchPacket, ChunkIndex.folia);
+
         } else {
             this.getLogger().warning(
                     "Unsupported Version, for versions < 1.21.4 downgrade to 9.9.2, for versions > 1.21.4 download the corresponding version");
@@ -125,7 +136,7 @@ public final class ChunkIndex extends JavaPlugin {
         });
         // bStats
         final int pluginId = 26238;
-        final Metrics metrics = new Metrics(this, pluginId);
+        final Metrics metrics = new Metrics(this, pluginId, folia);
         try {
             // Access the private 'metricsBase' field on Metrics
             final java.lang.reflect.Field baseField = metrics.getClass().getDeclaredField("metricsBase");
