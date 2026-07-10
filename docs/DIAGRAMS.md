@@ -59,13 +59,13 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-    subgraph Main_Thread["Main Thread (Bukkit scheduler)"]
+    subgraph Main_Thread["Main Thread (Global scheduler)"]
         S1["tickSync() every tick"] --> S2[run sync queue]
     end
 
     subgraph Async_Tasks[Async Scheduler]
-        A1["tickAsync() every tick"] --> A2[reset network counters]
-        A3["tickReport() every 20 ticks"] --> A4[roll up stats]
+        A1["tickAsync() every 50 milliseconds (1 tick)"] --> A2[reset network counters]
+        A3["tickReport() every second (20 ticks)"] --> A4[roll up stats]
     end
 
     subgraph Custom_Threads[Custom threads]
