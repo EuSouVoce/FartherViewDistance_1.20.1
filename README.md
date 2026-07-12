@@ -26,7 +26,7 @@ See [docs/DIAGRAMS.md](docs/DIAGRAMS.md) for process and routine diagrams.
 4. ~~\<Optional> Rename pack.jar -> FartherViewDistance.jar~~
 
 ## Since v10.0.0 **it now**:
-*  Uses: Java 21
+*  Uses: ~~Java 21~~ Java 25+
 * Every version will be compiled against a paper version, if you are seeking retro-compatibility, use an older version,
 * If the server is running in an incompatible version it will disable the plugin and log this info.
 
