@@ -30,10 +30,6 @@ repositories {
         url = uri("https://repo.extendedclip.com/releases/")
     }
     maven {
-        name = "imperiogames-public"
-        url = uri("https://repo.imperio.games/public/")
-    }
-    maven {
         name = "minecraft-libraries"
         url = uri("https://libraries.minecraft.net")
     }
