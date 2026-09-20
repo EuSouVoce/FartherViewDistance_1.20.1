@@ -1,6 +1,6 @@
 plugins {
     id("java")
-    id("io.papermc.paperweight.userdev").version("2.0.0-beta.21")
+    id("io.papermc.paperweight.userdev").version("2.0.0-beta.23")
 }
 
 int defaultJavaVersion = 25
@@ -16,14 +16,6 @@ repositories {
     maven {
         name = "papermc"
         url = uri("https://repo.papermc.io/repository/maven-public/")
-    }
-    maven {
-        name = "codemc"
-        url = uri("https://repo.codemc.org/repository/maven-public/")
-    }
-    maven {
-        name = "sonatype"
-        url = uri("https://oss.sonatype.org/content/groups/public/")
     }
     maven {
         name = "placeholderapi"
@@ -49,7 +41,7 @@ dependencies {
 }
 
 processResources {
-    filesMatching('paper-plugin.yml') {
+    filesMatching("paper-plugin.yml") {
         expand(version: project.version)
     }
 }
