@@ -2,7 +2,9 @@ package xuan.cat.fartherviewdistance.code.branch;
 
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.Collection;
 import java.util.List;
+import java.util.function.BiConsumer;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -25,6 +27,15 @@ public final class PacketHandleLightUpdateCode {
         }
     }
 
+    public static <E> void writeCollection(FriendlyByteBuf buf, Collection<E> collection, BiConsumer<FriendlyByteBuf, E> writer) {
+        int size = collection.size();
+        buf.writeVarInt(size);
+
+        for (E element : collection) {
+            writer.accept(buf, element);
+        }
+    }
+
     public void write(final FriendlyByteBuf serializer, final ChunkLightCode light) {
         final List<byte[]> dataSky = new ArrayList<>();
         final List<byte[]> dataBlock = new ArrayList<>();
@@ -43,7 +54,7 @@ public final class PacketHandleLightUpdateCode {
         serializer.writeBitSet(notBlockEmpty);
         serializer.writeBitSet(isSkyEmpty);
         serializer.writeBitSet(isBlockEmpty);
-        serializer.writeCollection(dataSky, RegistryFriendlyByteBuf::writeByteArray);
-        serializer.writeCollection(dataBlock, RegistryFriendlyByteBuf::writeByteArray);
+        writeCollection(serializer, dataSky, RegistryFriendlyByteBuf::writeByteArray);
+        writeCollection(serializer, dataBlock, RegistryFriendlyByteBuf::writeByteArray);
     }
 }

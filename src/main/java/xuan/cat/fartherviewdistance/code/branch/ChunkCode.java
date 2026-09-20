@@ -251,12 +251,6 @@ public final class ChunkCode implements BranchChunk {
             return Status.STRUCTURE_REFERENCES;
         } else if (chunkStatus == ChunkStatus.BIOMES) {
             return Status.BIOMES;
-        } else if (chunkStatus == ChunkStatus.NOISE) {
-            return Status.NOISE;
-        } else if (chunkStatus == ChunkStatus.SURFACE) {
-            return Status.SURFACE;
-        } else if (chunkStatus == ChunkStatus.CARVERS) {
-            return Status.CARVERS;
         } else if (chunkStatus == ChunkStatus.FEATURES) {
             return Status.FEATURES;
         } else if (chunkStatus == ChunkStatus.LIGHT) {

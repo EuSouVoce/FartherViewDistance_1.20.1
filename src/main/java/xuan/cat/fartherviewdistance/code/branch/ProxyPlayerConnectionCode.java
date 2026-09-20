@@ -38,7 +38,7 @@ public final class ProxyPlayerConnectionCode {
                 return !event.isCancelled();
             } else if (packet instanceof final ClientboundLevelChunkWithLightPacket clientboundLevelChunkWithLightPacket) {
                 final PacketMapChunkEvent event = new PacketMapChunkEvent(player,
-                        clientboundLevelChunkWithLightPacket.getX(), clientboundLevelChunkWithLightPacket.getZ());
+                        clientboundLevelChunkWithLightPacket.x(), clientboundLevelChunkWithLightPacket.z());
                 Bukkit.getPluginManager().callEvent(event);
                 return !event.isCancelled();
             }
