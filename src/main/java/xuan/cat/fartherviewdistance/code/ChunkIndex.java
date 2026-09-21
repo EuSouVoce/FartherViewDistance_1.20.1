@@ -31,7 +31,7 @@ public final class ChunkIndex extends JavaPlugin {
     private static ConfigData configData;
     private static BranchPacket branchPacket;
     private static BranchMinecraft branchMinecraft;
-    private static final Set<String> SUPPORTED = Set.of("26.1", "26.1.1", "26.1.2", "26.2");
+    private static final Set<String> SUPPORTED = Set.of("26.3");
     private static boolean folia;
 
     @Override

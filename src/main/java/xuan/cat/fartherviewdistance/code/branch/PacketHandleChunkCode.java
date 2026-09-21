@@ -52,7 +52,7 @@ public final class PacketHandleChunkCode {
         serializer.writeBytes(bufferBytes);
 
         final Map<BlockPos, BlockEntity> blockEntityMap = !needTile ? new HashMap<>(0) : chunk.getBlockEntities();
-        serializer.writeCollection(blockEntityMap.entrySet(), (buf, entry) -> {
+        PacketHandleLightUpdateCode.writeCollection(serializer, blockEntityMap.entrySet(), (buf, entry) -> {
             final BlockEntity blockEntity = entry.getValue();
             final CompoundTag entityNBT = blockEntity.getUpdateTag(chunk.getLevel().registryAccess());
             final BlockPos blockPos = blockEntity.getBlockPos();

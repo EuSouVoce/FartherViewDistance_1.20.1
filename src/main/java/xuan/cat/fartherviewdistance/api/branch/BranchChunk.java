@@ -61,9 +61,9 @@ public interface BranchChunk {
         STRUCTURE_STARTS(1),
         STRUCTURE_REFERENCES(2),
         BIOMES(3),
-        NOISE(4),
-        SURFACE(5),
-        CARVERS(6),
+        // NOISE(4),
+        // SURFACE(5),
+        // CARVERS(6),
         // LIQUID_CARVERS(7), //unused and not needed
         FEATURES(8),
         INITIALIZE_LIGHT(9), // was LIGHT(9)
